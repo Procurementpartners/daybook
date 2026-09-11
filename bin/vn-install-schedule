@@ -8,11 +8,20 @@ source "$VN_LIB/common.sh"
 LA="$HOME/Library/LaunchAgents"
 mkdir -p "$LA"
 
-# Build one <dict> per configured weekday
+# Build one <dict> per configured day. Weekend days use the weekend start hour.
+# NOTE: common.sh may have already swapped VN_START_HOUR for today; read the
+# config's own values here so the installed schedule is day-correct, not today-correct.
+_wd_start=$(sed -n 's/^VN_START_HOUR=\([0-9]*\).*/\1/p' "$VN_CONF" 2>/dev/null | head -1)
+_we_start=$(sed -n 's/^VN_WEEKEND_START_HOUR=\([0-9]*\).*/\1/p' "$VN_CONF" 2>/dev/null | head -1)
+: "${_wd_start:=$VN_START_HOUR}"
+: "${_we_start:=$_wd_start}"
+
 intervals=""
 for d in $VN_WEEKDAYS; do
+  h="$_wd_start"
+  case " ${VN_WEEKEND_DAYS:-} " in *" $d "*) h="$_we_start";; esac
   intervals="$intervals
-    <dict><key>Weekday</key><integer>$d</integer><key>Hour</key><integer>$VN_START_HOUR</integer><key>Minute</key><integer>0</integer></dict>"
+    <dict><key>Weekday</key><integer>$d</integer><key>Hour</key><integer>$h</integer><key>Minute</key><integer>0</integer></dict>"
 done
 
 cat > "$LA/com.voicenotes.record.plist" <<EOF
@@ -70,6 +79,17 @@ for job in record transcribe purge; do
     || echo "✗ com.voicenotes.$job failed to load"
 done
 
+_wd_end=$(sed -n 's/^VN_END_HOUR=\([0-9]*\).*/\1/p' "$VN_CONF" 2>/dev/null | head -1)
+_we_end=$(sed -n 's/^VN_WEEKEND_END_HOUR=\([0-9]*\).*/\1/p' "$VN_CONF" 2>/dev/null | head -1)
+: "${_wd_end:=$VN_END_HOUR}"; : "${_we_end:=$_wd_end}"
+_names=(Mon Tue Wed Thu Fri Sat Sun)
+
 echo
-echo "Recording will start at ${VN_START_HOUR}:00 on weekdays ${VN_WEEKDAYS// /, } and stop at ${VN_END_HOUR}:00."
+echo "Schedule:"
+for d in $VN_WEEKDAYS; do
+  s="$_wd_start"; e="$_wd_end"
+  case " ${VN_WEEKEND_DAYS:-} " in *" $d "*) s="$_we_start"; e="$_we_end";; esac
+  printf "  %s  %02d:00 – %02d:00\n" "${_names[$((d-1))]}" "$s" "$e"
+done
+echo
 echo "Disable any time with: vn schedule off"

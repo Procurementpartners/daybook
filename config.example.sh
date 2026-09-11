@@ -30,3 +30,9 @@ VN_KEEP_TRANSCRIPT_DAYS=90
 
 # Domain vocabulary to bias transcription (names, acronyms, product terms).
 VN_PROMPT="GPO, vendor, supplier, ROI, SKU, punchout, requisition, Jira, API"
+
+# Weekend recording. Days listed here use the weekend window instead of the
+# weekday one. Leave VN_WEEKEND_DAYS empty to disable weekend recording.
+VN_WEEKEND_DAYS="6 7"
+VN_WEEKEND_START_HOUR=9
+VN_WEEKEND_END_HOUR=21

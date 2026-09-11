@@ -15,6 +15,21 @@ VN_CONF="${VN_CONF:-$HOME/.voicenotes.conf}"
 : "${VN_KEEP_AUDIO_DAYS:=7}"
 : "${VN_KEEP_TRANSCRIPT_DAYS:=90}"
 : "${VN_PROMPT:=}"
+: "${VN_WEEKEND_DAYS:=}"
+: "${VN_WEEKEND_START_HOUR:=$VN_START_HOUR}"
+: "${VN_WEEKEND_END_HOUR:=$VN_END_HOUR}"
+
+# On a weekend day, swap in the weekend window. Done here so every script
+# (record, schedule installer, status) agrees without duplicating the logic.
+if [ -n "$VN_WEEKEND_DAYS" ]; then
+  _today_dow=$(date +%u)                 # 1=Mon .. 7=Sun
+  case " $VN_WEEKEND_DAYS " in
+    *" $_today_dow "*)
+      VN_START_HOUR="$VN_WEEKEND_START_HOUR"
+      VN_END_HOUR="$VN_WEEKEND_END_HOUR"
+      ;;
+  esac
+fi
 
 vn_dirs(){ mkdir -p "$VN_ROOT"/{audio,transcripts,notes,calendar,logs,models,archive}; }
 
