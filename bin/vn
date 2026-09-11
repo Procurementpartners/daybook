@@ -29,7 +29,10 @@ ${BOLD}vn${OFF} — VoiceNotes
   ${BOLD}vn transcribe${OFF} [day]   Transcribe segments (default: today)
   ${BOLD}vn notes${OFF} [day]        Build calendar-linked notes
   ${BOLD}vn today${OFF}              Transcribe + notes + show index
-  ${BOLD}vn show${OFF} [day]         Print today's index
+  ${BOLD}vn show${OFF} [day]         Print the day's index
+  ${BOLD}vn read${OFF} [day]         Print the day's full transcript
+  ${BOLD}vn note${OFF} <n|name>      Print one meeting's note
+  ${BOLD}vn open${OFF} [day]         Open the notes folder in Finder
 
   ${BOLD}vn schedule on|off${OFF}    Enable/disable the ${VN_START_HOUR}:00 daily job
   ${BOLD}vn purge${OFF}              Compress audio, apply retention
@@ -122,6 +125,39 @@ cmd_show(){
   [ -f "$IDX" ] && cat "$IDX" || echo "no notes for $DAY — run: vn notes $DAY"
 }
 
+# Full day's transcript as one stream, in time order.
+cmd_read(){
+  local DAY; DAY=$(day_arg "${1:-}")
+  local T="$VN_ROOT/transcripts/$DAY"
+  if [ ! -d "$T" ] || ! ls "$T"/*.txt >/dev/null 2>&1; then
+    echo "no transcripts for $DAY"; return 1
+  fi
+  local n; n=$(cat "$T"/*.txt 2>/dev/null | grep -c . )
+  echo "${BOLD}Transcript — $DAY${OFF}  ${DIM}($n lines)${OFF}"
+  echo
+  cat "$T"/*.txt 2>/dev/null | grep .
+}
+
+# One meeting's note, by number or by name fragment.
+cmd_note(){
+  local DAY N; DAY=$(date +%Y-%m-%d); N="${1:-}"
+  if [[ "${2:-}" != "" ]]; then DAY="$1"; N="$2"; fi
+  local D="$VN_ROOT/notes/$DAY"
+  [ -d "$D" ] || { echo "no notes for $DAY"; return 1; }
+  if [ -z "$N" ]; then cmd_show "$DAY"; return; fi
+  local f
+  f=$(ls "$D"/*.md 2>/dev/null | grep -iE "/(0*$N-|[0-9]+-[^/]*$N)" | head -1)
+  [ -z "$f" ] && f=$(grep -ril "$N" "$D"/*.md 2>/dev/null | head -1)
+  [ -n "$f" ] && cat "$f" || echo "no note matching '$N' on $DAY"
+}
+
+cmd_open(){
+  local DAY; DAY=$(day_arg "${1:-}")
+  local D="$VN_ROOT/notes/$DAY"
+  [ -d "$D" ] || D="$VN_ROOT"
+  open "$D"
+}
+
 cmd_today(){
   "$VN_LIB/transcribe.sh"
   cmd_notes
@@ -169,6 +205,9 @@ case "${1:-}" in
   notes)        shift; cmd_notes "${1:-}";;
   today)        cmd_today;;
   show)         shift; cmd_show "${1:-}";;
+  read)         shift; cmd_read "${1:-}";;
+  note)         shift; cmd_note "${1:-}" "${2:-}";;
+  open)         shift; cmd_open "${1:-}";;
   schedule)     shift; cmd_schedule "${1:-}";;
   purge)        "$VN_LIB/purge.sh";;
   setup-model)  cmd_setup_model;;
