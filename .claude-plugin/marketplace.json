@@ -1,5 +1,6 @@
 {
   "name": "procurementpartners",
+  "description": "Claude Code plugins from Procurement Partners.",
   "owner": {
     "name": "Procurement Partners",
     "url": "https://github.com/Procurementpartners"
