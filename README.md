@@ -77,7 +77,15 @@ Individually:
 /plugin install daybook@procurementpartners-daybook
 ```
 
-Or push it to everyone on a Team/Enterprise plan via **Organization settings → Plugins**, pointing at this repo. Team members get the skill with no action of their own.
+Or list it for the org on a Team/Enterprise plan via **Organization settings → Plugins**, pointing at this repo. You choose how it reaches people:
+
+| Preference | Effect |
+|---|---|
+| **Available** | Shows in the plugin catalog; members install it themselves |
+| **Installed by default** | Added for everyone automatically; members can uninstall |
+| **Required** | Added for everyone; members cannot uninstall |
+
+On Enterprise you can also set this per group. **Use "Available" for Daybook.** This is a recording tool, and people should choose it deliberately rather than find it already present. "Required" would be the wrong setting for anything that records colleagues — nobody should be unable to remove it.
 
 **This distributes the agent, not the recorder.** The plugin is instructions — it cannot record audio, run Whisper, or install anything. Each person still runs the local install on their Mac:
 
