@@ -32,7 +32,7 @@ The wall-clock stamps are the whole trick. Because every line carries a real tim
 One line:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<org>/daybook-mac/main/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Procurementpartners/daybook/main/bootstrap.sh | bash
 ```
 
 Or clone it yourself:

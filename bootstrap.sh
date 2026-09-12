@@ -7,7 +7,7 @@
 # checkout is updated in place rather than re-cloned.
 set -uo pipefail
 
-REPO="${DAYBOOK_REPO:-https://github.com/REPLACE-ME/daybook-mac.git}"
+REPO="${DAYBOOK_REPO:-https://github.com/Procurementpartners/daybook.git}"
 DEST="${DAYBOOK_DEST:-$HOME/.daybook-src}"
 
 echo "Daybook"
