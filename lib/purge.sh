@@ -13,6 +13,12 @@ for D in "$DBK_ROOT"/audio/*/; do
     [ -e "$W" ] || continue
     BASE=$(basename "$W" .wav)
     [ -e "$DBK_ROOT/transcripts/$DAY/$BASE.txt" ] || continue
+
+    # Retention 0: the transcript is the artefact, the audio is not kept.
+    if [ "$DBK_KEEP_AUDIO_DAYS" = "0" ]; then
+      sz=$(stat -f%z "$W"); rm -f "$W"; freed=$((freed+sz)); continue
+    fi
+
     mkdir -p "$DBK_ROOT/archive/$DAY"
     OPUS="$DBK_ROOT/archive/$DAY/$BASE.opus"
     if [ ! -e "$OPUS" ]; then
@@ -27,9 +33,23 @@ for D in "$DBK_ROOT"/audio/*/; do
 done
 
 # 2. Expire old archives and transcripts
-find "$DBK_ROOT/archive" -type f -name '*.opus' -mtime +"$DBK_KEEP_AUDIO_DAYS" -delete 2>/dev/null
+if [ "$DBK_KEEP_AUDIO_DAYS" = "0" ]; then
+  # Retention 0 means no audio at rest at all — including archives left
+  # behind by a previous, more permissive setting.
+  n=$(find "$DBK_ROOT/archive" -type f -name '*.opus' 2>/dev/null | wc -l | tr -d ' ')
+  if [ "$n" -gt 0 ]; then
+    find "$DBK_ROOT/archive" -type f -name '*.opus' -delete 2>/dev/null
+    echo "removed $n archived audio file(s) left by a previous retention setting"
+  fi
+else
+  find "$DBK_ROOT/archive" -type f -name '*.opus' -mtime +"$DBK_KEEP_AUDIO_DAYS" -delete 2>/dev/null
+fi
 find "$DBK_ROOT/transcripts" -type f -name '*.txt' -mtime +"$DBK_KEEP_TRANSCRIPT_DAYS" -delete 2>/dev/null
 find "$DBK_ROOT" -type d -empty -delete 2>/dev/null
 
 echo "purge complete — reclaimed $((freed/1024/1024)) MB from WAVs"
-echo "audio kept ${DBK_KEEP_AUDIO_DAYS}d, transcripts kept ${DBK_KEEP_TRANSCRIPT_DAYS}d"
+if [ "$DBK_KEEP_AUDIO_DAYS" = "0" ]; then
+  echo "audio not retained (deleted once transcribed), transcripts kept ${DBK_KEEP_TRANSCRIPT_DAYS}d"
+else
+  echo "audio kept ${DBK_KEEP_AUDIO_DAYS}d, transcripts kept ${DBK_KEEP_TRANSCRIPT_DAYS}d"
+fi

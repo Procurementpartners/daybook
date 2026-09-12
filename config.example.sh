@@ -29,8 +29,13 @@ DBK_LANG="en"
 # Segments quieter than this (dBFS peak) are treated as empty and skipped.
 DBK_SILENCE_FLOOR=-45
 
-# Retention. Audio is compressed to Opus after transcription, then deleted.
-DBK_KEEP_AUDIO_DAYS=7
+# Retention.
+# 0  = delete each audio segment as soon as its transcript is written (default).
+#      Audio is the sensitive artefact and the transcript is what you actually
+#      use. The trade-off: once the audio is gone you cannot re-transcribe it,
+#      so a garbled passage stays garbled.
+# >0 = keep a compressed Opus archive for this many days instead.
+DBK_KEEP_AUDIO_DAYS=0
 DBK_KEEP_TRANSCRIPT_DAYS=90
 
 # Domain vocabulary to bias transcription (names, acronyms, product terms).

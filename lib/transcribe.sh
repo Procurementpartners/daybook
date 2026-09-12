@@ -32,7 +32,9 @@ for W in "$AUDIO"/seg-*.wav; do
   PEAK=$(dbk_peak_db "$W"); PEAK=${PEAK:--99}
   if awk -v v="$PEAK" -v f="$DBK_SILENCE_FLOOR" 'BEGIN{exit !(v<f)}'; then
     echo "[silent] $BASE (${PEAK}dB)"
-    : > "$DONE"; continue
+    : > "$DONE"
+    [ "$DBK_KEEP_AUDIO_DAYS" = "0" ] && rm -f "$W"
+    continue
   fi
 
   echo "[speech] $BASE (${PEAK}dB)"
@@ -42,7 +44,13 @@ for W in "$AUDIO"/seg-*.wav; do
   if [ -f "$OUT/$BASE.json" ]; then
     python3 "$(dirname "${BASH_SOURCE[0]}")/wallclock.py" "$OUT/$BASE.json" > "$DONE"
     rm -f "$OUT/$BASE.json"
+    # Audio is the sensitive artefact. With retention 0, drop it as soon as
+    # the transcript exists — never wait for the nightly purge.
+    if [ "$DBK_KEEP_AUDIO_DAYS" = "0" ] && [ -s "$DONE" ]; then
+      rm -f "$W"
+    fi
   else
-    echo "(transcription failed)" > "$DONE"
+    # Keep the audio when transcription failed, so it can be retried.
+    echo "(transcription failed — audio kept for retry)" > "$DONE"
   fi
 done
