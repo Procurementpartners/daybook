@@ -69,13 +69,32 @@ Everything lives in `~/.daybook.conf`:
 | Setting | Default | Notes |
 |---|---|---|
 | `DBK_DEVICE_NAME` | *(system default)* | Matched by name, resolved at each start, so USB reordering can't break it |
-| `DBK_START_HOUR` / `DBK_END_HOUR` | 8 / 17 | |
+| `DBK_START_HOUR` / `DBK_START_MINUTE` | 8 / 0 | |
+| `DBK_END_HOUR` / `DBK_END_MINUTE` | 17 / 0 | An end at or before the start means an overnight window |
 | `DBK_WEEKDAYS` | `1 2 3 4 5` | 1 = Monday |
 | `DBK_SEGMENT_SECONDS` | 300 | Shorter = less lost to a crash |
 | `DBK_SILENCE_FLOOR` | -45 | Peak dBFS below which a chunk is skipped |
 | `DBK_KEEP_AUDIO_DAYS` | 7 | Opus archives expire after this |
 | `DBK_KEEP_TRANSCRIPT_DAYS` | 90 | |
 | `DBK_PROMPT` | — | Domain vocabulary to bias transcription |
+
+## Timezones and working hours
+
+Everything is **local time on the machine that runs it**. There is no shared clock, no UTC offset to set, and no server. A colleague in Bengaluru sets `DBK_START_HOUR=9`, `DBK_END_HOUR=19` and gets 09:00–19:00 IST; the recorder, the schedule, the transcript timestamps and the calendar matcher all agree because they all ask the same machine what time it is.
+
+Three things this supports that a fixed 8–17 assumption doesn't:
+
+- **Half-hour starts** — `DBK_START_MINUTE=30` for a 09:30 day.
+- **Late finishes** — an end of 22:00 or later works; the nightly compression job wraps past midnight correctly.
+- **Overnight windows** — set an end at or before the start, e.g. 20:00 → 04:00, and the recorder runs through midnight into the next morning.
+
+`daybook doctor` prints the resolved window with the machine's timezone, so a colleague can confirm what their config actually means:
+
+```
+✓ window 09:30 – 22:00  IST, UTC+0530
+```
+
+The one genuinely shared clock is the **calendar JSON**, whose times are UTC. `make-notes.py` converts to local on read, so this is handled — but it's the place a timezone error would show up, as notes landing on the wrong meeting. Check one known meeting after first setup.
 
 ## Calendar
 

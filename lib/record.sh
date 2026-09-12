@@ -20,10 +20,18 @@ dbk_log "input device [$IDX] ${DBK_DEVICE_NAME:-<system default>}"
 if [ "${1:-}" != "" ]; then
   DUR="$1"; dbk_log "manual run: ${DUR}s"
 else
-  END=$(date -j -f "%Y-%m-%d %H:%M:%S" "$DAY $(printf '%02d' "$DBK_END_HOUR"):00:00" +%s 2>/dev/null)
+  END=$(date -j -f "%Y-%m-%d %H:%M:%S" \
+        "$DAY $(printf '%02d:%02d' "$DBK_END_HOUR" "$DBK_END_MINUTE"):00" +%s 2>/dev/null)
+  # An end at or before the start means the window crosses midnight.
+  if [ $(( DBK_END_HOUR * 60 + DBK_END_MINUTE )) -le $(( DBK_START_HOUR * 60 + DBK_START_MINUTE )) ]; then
+    END=$(( END + 86400 ))
+    dbk_log "overnight window, ending tomorrow"
+  fi
   DUR=$(( END - $(date +%s) ))
-  if [ "$DUR" -le 0 ]; then dbk_log "past ${DBK_END_HOUR}:00, nothing to do"; exit 0; fi
-  dbk_log "recording ${DUR}s until ${DBK_END_HOUR}:00"
+  if [ "$DUR" -le 0 ]; then
+    dbk_log "past $(printf '%02d:%02d' "$DBK_END_HOUR" "$DBK_END_MINUTE"), nothing to do"; exit 0
+  fi
+  dbk_log "recording ${DUR}s until $(printf '%02d:%02d' "$DBK_END_HOUR" "$DBK_END_MINUTE")"
 fi
 
 echo $$ > "$DBK_ROOT/logs/record.pid"

@@ -88,6 +88,7 @@ These are machine transcripts of far-field audio. They are not verbatim minutes,
 | One meeting | `daybook note <name>` |
 | Search across days | `grep -ri "<term>" ~/Daybook/transcripts/` |
 | Change hours, device, retention | Edit `~/.daybook.conf`, then `daybook schedule on` |
+| Different working hours or timezone | All settings are local time on their machine. Set `DBK_START_HOUR`/`DBK_START_MINUTE` and `DBK_END_HOUR`/`DBK_END_MINUTE`, then `daybook schedule on`. An end at or before the start is an overnight window. `daybook doctor` shows the resolved window and timezone. |
 | Something is broken | `daybook doctor` first — it checks deps, mic permission, device, disk |
 | Free up space | `daybook purge` |
 

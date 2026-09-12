@@ -12,6 +12,8 @@ mkdir -p "$LA"
 # NOTE: common.sh may have already swapped DBK_START_HOUR for today; read the
 # config's own values here so the installed schedule is day-correct, not today-correct.
 _wd_start=$(sed -n 's/^DBK_START_HOUR=\([0-9]*\).*/\1/p' "$DBK_CONF" 2>/dev/null | head -1)
+_wd_min=$(sed -n 's/^DBK_START_MINUTE=\([0-9]*\).*/\1/p' "$DBK_CONF" 2>/dev/null | head -1)
+: "${_wd_min:=0}"
 _we_start=$(sed -n 's/^DBK_WEEKEND_START_HOUR=\([0-9]*\).*/\1/p' "$DBK_CONF" 2>/dev/null | head -1)
 : "${_wd_start:=$DBK_START_HOUR}"
 : "${_we_start:=$_wd_start}"
@@ -21,7 +23,7 @@ for d in $DBK_WEEKDAYS; do
   h="$_wd_start"
   case " ${DBK_WEEKEND_DAYS:-} " in *" $d "*) h="$_we_start";; esac
   intervals="$intervals
-    <dict><key>Weekday</key><integer>$d</integer><key>Hour</key><integer>$h</integer><key>Minute</key><integer>0</integer></dict>"
+    <dict><key>Weekday</key><integer>$d</integer><key>Hour</key><integer>$h</integer><key>Minute</key><integer>$_wd_min</integer></dict>"
 done
 
 cat > "$LA/com.daybook.record.plist" <<EOF
@@ -66,7 +68,7 @@ cat > "$LA/com.daybook.purge.plist" <<EOF
   <key>EnvironmentVariables</key>
   <dict><key>DBK_CONF</key><string>$DBK_CONF</string></dict>
   <key>StartCalendarInterval</key>
-  <array><dict><key>Hour</key><integer>$(( DBK_END_HOUR + 2 ))</integer><key>Minute</key><integer>30</integer></dict></array>
+  <array><dict><key>Hour</key><integer>$(( (DBK_END_HOUR + 2) % 24 ))</integer><key>Minute</key><integer>30</integer></dict></array>
   <key>StandardErrorPath</key><string>$DBK_ROOT/logs/launchd-purge.err</string>
   <key>Nice</key><integer>15</integer>
 </dict></plist>
@@ -89,7 +91,7 @@ echo "Schedule:"
 for d in $DBK_WEEKDAYS; do
   s="$_wd_start"; e="$_wd_end"
   case " ${DBK_WEEKEND_DAYS:-} " in *" $d "*) s="$_we_start"; e="$_we_end";; esac
-  printf "  %s  %02d:00 – %02d:00\n" "${_names[$((d-1))]}" "$s" "$e"
+  printf "  %s  %02d:%02d – %02d:%02d\n" "${_names[$((d-1))]}" "$s" "$_wd_min" "$e" "${DBK_END_MINUTE:-0}"
 done
 echo
 echo "Disable any time with: daybook schedule off"

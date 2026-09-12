@@ -7,9 +7,14 @@ DBK_ROOT="$HOME/Daybook"
 # Run `daybook devices` to list options. Leave empty to use the system default input.
 DBK_DEVICE_NAME=""
 
-# Workday window, 24h local time.
+# Workday window, in YOUR machine's local time. Everything Daybook does is
+# local-time based, so a colleague in another timezone just sets their own
+# hours — no offsets, no UTC conversion anywhere.
+# An end earlier than the start means an overnight window (e.g. 20:00 -> 04:00).
 DBK_START_HOUR=8
+DBK_START_MINUTE=0
 DBK_END_HOUR=17
+DBK_END_MINUTE=0
 
 # Days of week to record: 1=Mon .. 7=Sun
 DBK_WEEKDAYS="1 2 3 4 5"

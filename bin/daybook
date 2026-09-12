@@ -77,6 +77,17 @@ cmd_doctor(){
   fi
   rm -f "$t"
 
+  # Window + timezone: everything is local-time, so show what this machine thinks
+  local sm em win
+  sm=$(printf '%02d:%02d' "$DBK_START_HOUR" "$DBK_START_MINUTE")
+  em=$(printf '%02d:%02d' "$DBK_END_HOUR" "$DBK_END_MINUTE")
+  if [ $(( DBK_END_HOUR*60 + DBK_END_MINUTE )) -le $(( DBK_START_HOUR*60 + DBK_START_MINUTE )) ]; then
+    win="$sm – $em (overnight)"
+  else
+    win="$sm – $em"
+  fi
+  ok "window $win  ${DIM}$(date '+%Z, UTC%z')${OFF}"
+
   local avail; avail=$(df -h "$DBK_ROOT" 2>/dev/null | tail -1 | awk '{print $4}')
   echo "  ${DIM}disk available: ${avail:-unknown} — budget ~1 GB per recorded day${OFF}"
 
