@@ -74,7 +74,7 @@ Individually:
 
 ```
 /plugin marketplace add Procurementpartners/daybook
-/plugin install daybook@procurementpartners-daybook
+/plugin install daybook@procurementpartners
 ```
 
 Or list it for the org on a Team/Enterprise plan via **Organization settings → Plugins**, pointing at this repo.

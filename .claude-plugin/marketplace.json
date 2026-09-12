@@ -1,8 +1,8 @@
 {
-  "name": "procurementpartners-daybook",
+  "name": "procurementpartners",
   "owner": {
     "name": "Procurement Partners",
-    "url": "https://github.com/Procurementpartners/daybook"
+    "url": "https://github.com/Procurementpartners"
   },
   "plugins": [
     {
@@ -13,7 +13,12 @@
       "version": "1.0.0",
       "homepage": "https://github.com/Procurementpartners/daybook",
       "repository": "https://github.com/Procurementpartners/daybook",
-      "keywords": ["meeting-notes", "transcription", "calendar", "macos"],
+      "keywords": [
+        "meeting-notes",
+        "transcription",
+        "calendar",
+        "macos"
+      ],
       "category": "productivity"
     }
   ]
