@@ -62,9 +62,17 @@ Everything lives in `~/.voicenotes.conf`:
 
 Without a calendar file you still get transcripts; they just land in one undifferentiated bucket.
 
+## Teams transcripts take priority
+
+Where a Teams transcript exists, it is used instead of the microphone transcript — it has speaker names and doesn't depend on what your headphones do. Drop it at `~/VoiceNotes/teams/<date>/<HHMM>-<slug>.txt` and the note picks it up, folding the mic version into a collapsed block beneath.
+
+Reaching them through the Graph API needs a tenant setting that Microsoft now defaults to **off**. See [docs/teams.md](docs/teams.md) for the exact thing to ask an admin for.
+
+The recorder keeps running either way — Teams only covers transcribed Teams meetings, not in-person conversations, phone calls, or desk work.
+
 ## Known limits
 
-**No speaker labels.** Whisper transcribes, it doesn't diarize. A 1:1 is usually readable from context; a six-person call reads as a wall of text. Fixing it needs a diarization model or a source that already carries names, like Teams transcripts.
+**No speaker labels from the microphone.** Whisper transcribes, it doesn't diarize. A 1:1 is usually readable from context; a six-person call reads as a wall of text. Fixing it needs a diarization model or a source that already carries names, like Teams transcripts.
 
 **The microphone only hears the room.** If you wear headphones, the far end of a call never reaches the mic and you capture half the conversation. Test yours before trusting it:
 

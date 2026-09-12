@@ -67,15 +67,32 @@ for i, ev in enumerate(events, 1):
     att = ev.get("attendees") or []
     if att:
         body.append(f"- **Attendees:** {', '.join(a.split('@')[0] for a in att)}")
-    body += ["", "## Captured audio", ""]
-    if hits:
-        body += [f"`{t:%H:%M:%S}`  {x}" for t, x in hits]
+    # Prefer a Teams transcript when one exists — it carries speaker names,
+    # which the local recording cannot. Fall back to the mic transcript.
+    teams_file = ROOT / "teams" / day / f"{ev['start_local']:%H%M}-{slug(ev['subject'])}.txt"
+    if teams_file.exists() and teams_file.stat().st_size > 0:
+        body += ["", "## Transcript", "",
+                 "_Source: Microsoft Teams — speaker-attributed._", ""]
+        body += teams_file.read_text(errors="replace").rstrip().splitlines()
+        if hits:
+            body += ["", f"<details><summary>Local mic recording ({len(hits)} lines)</summary>", ""]
+            body += [f"`{t:%H:%M:%S}`  {x}" for t, x in hits]
+            body += ["", "</details>"]
+        source = "teams"
     else:
-        body.append("_No audio captured during this window._")
+        body += ["", "## Transcript", "",
+                 "_Source: local microphone — no speaker labels._", ""]
+        if hits:
+            body += [f"`{t:%H:%M:%S}`  {x}" for t, x in hits]
+        else:
+            body.append("_No audio captured during this window._")
+        source = "mic" if hits else "none"
     body.append("")
     (odir / name).write_text("\n".join(body))
 
-    mark = f"{len(hits)} lines" if hits else "no audio"
+    mark = {"teams": "**Teams transcript**",
+            "mic":   f"{len(hits)} lines (mic)",
+            "none":  "no audio"}[source]
     index.append(f"- `{ev['start_local']:%H:%M}` [{ev['subject']}]({name}) — {mark}")
 
 # ---- anything outside a meeting ------------------------------------------
