@@ -38,7 +38,10 @@ if [ -z "${DBK_DEVICE_NAME:-}" ]; then
   echo
   echo "Available audio inputs:"
   ffmpeg -f avfoundation -list_devices true -i "" 2>&1 \
-    | awk '/audio devices/,0' | grep -E '^\[' | sed 's/\[AVFoundation[^]]*\] /  /'
+    | awk '/audio devices/,0' \
+    | sed 's/\[AVFoundation[^]]*\] //' \
+    | grep -E '^\[[0-9]+\]' \
+    | sed 's/^/  /'
   echo
   echo "  Edit DBK_DEVICE_NAME in $CONF to pick one (blank = system default)."
 fi

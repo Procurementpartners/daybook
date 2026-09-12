@@ -49,7 +49,9 @@ day_arg(){ echo "${1:-$(date +%Y-%m-%d)}"; }
 cmd_devices(){
   echo "${BOLD}Audio input devices${OFF}"
   ffmpeg -f avfoundation -list_devices true -i "" 2>&1 \
-    | awk '/audio devices/,0' | grep -E '^\[' | sed 's/\[AVFoundation[^]]*\] //'
+    | awk '/audio devices/,0' \
+    | sed 's/\[AVFoundation[^]]*\] //' \
+    | grep -E '^\[[0-9]+\]'
   echo
   echo "Set DBK_DEVICE_NAME in ${DBK_CONF} to match one by name."
 }
