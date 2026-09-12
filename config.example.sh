@@ -30,12 +30,12 @@ DBK_LANG="en"
 DBK_SILENCE_FLOOR=-45
 
 # Retention.
-# 0  = delete each audio segment as soon as its transcript is written (default).
-#      Audio is the sensitive artefact and the transcript is what you actually
-#      use. The trade-off: once the audio is gone you cannot re-transcribe it,
-#      so a garbled passage stays garbled.
-# >0 = keep a compressed Opus archive for this many days instead.
-DBK_KEEP_AUDIO_DAYS=0
+# >0 = keep a compressed Opus archive for this many days (default: 3).
+#      Three days is enough to re-transcribe after improving DBK_PROMPT or
+#      to check what was actually said, without keeping voices around long.
+#  0  = delete each segment as soon as its transcript is written. Most private,
+#      but irreversible: a garbled passage can never be re-transcribed.
+DBK_KEEP_AUDIO_DAYS=3
 DBK_KEEP_TRANSCRIPT_DAYS=90
 
 # Domain vocabulary to bias transcription (names, acronyms, product terms).

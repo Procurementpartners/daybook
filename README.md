@@ -115,7 +115,7 @@ Everything lives in `~/.daybook.conf`:
 | `DBK_WEEKDAYS` | `1 2 3 4 5` | 1 = Monday |
 | `DBK_SEGMENT_SECONDS` | 300 | Shorter = less lost to a crash |
 | `DBK_SILENCE_FLOOR` | -45 | Peak dBFS below which a chunk is skipped |
-| `DBK_KEEP_AUDIO_DAYS` | 0 | 0 deletes audio as soon as it's transcribed; >0 keeps an Opus archive that many days |
+| `DBK_KEEP_AUDIO_DAYS` | 3 | Days to keep a compressed Opus archive; 0 deletes audio as soon as it's transcribed |
 | `DBK_KEEP_TRANSCRIPT_DAYS` | 90 | |
 | `DBK_PROMPT` | — | Domain vocabulary to bias transcription |
 
@@ -164,9 +164,9 @@ daybook today
 
 If the played audio isn't in the transcript, you need either your meeting platform's own transcription or a loopback device such as BlackHole.
 
-**Disk.** By default no audio is kept: each segment is deleted the moment its transcript is written, so the working set stays around 50 MB rather than a day's 1 GB. Transcripts are a few hundred KB per day. Set `DBK_KEEP_AUDIO_DAYS` above 0 to keep a compressed archive instead (~10 MB/hour).
+**Disk.** Audio is compressed to Opus after transcription and kept 3 days by default — roughly 10 MB/hour, so about 100 MB per recorded day. Transcripts are a few hundred KB. Set `DBK_KEEP_AUDIO_DAYS=0` to delete audio the moment it's transcribed instead, which keeps the working set near 50 MB and leaves no voices at rest.
 
-**Deleting audio is irreversible.** Once a segment is gone you cannot re-transcribe it with a better model or a corrected vocabulary prompt — a garbled passage stays garbled. If you're still tuning `DBK_PROMPT` or evaluating accuracy, set a few days of retention first and drop to 0 once you're happy. Audio that failed to transcribe is always kept for retry regardless of this setting.
+**Why 3 days and not 0.** Transcription quality depends heavily on `DBK_PROMPT` — names and domain terms are where Whisper fails, and you usually only discover that by reading a transcript. A short retention lets you fix the prompt and re-transcribe. Once accuracy settles, 0 is the more private setting. Audio that failed to transcribe is always kept for retry regardless.
 
 **Accuracy degrades with distance.** Close speech into a decent mic transcribes well. Someone across the room does not.
 

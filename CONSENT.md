@@ -22,7 +22,7 @@ Most organisations have policy on recording meetings, handling customer data, an
 - **Everything the microphone hears**, for the whole configured window — including the parts of your day that are not meetings, and conversations of people near you who never opted in.
 - **Only your side of remote calls**, if you wear headphones. Whether that helps or hurts depends on which risk you care about.
 - **Nothing off-device.** Whisper runs locally. No audio or transcript is uploaded anywhere by this tool.
-- **No audio at rest by default.** Each recording is deleted as soon as it has been transcribed, so what persists is text, not voices. This matters: a recording identifies a speaker in a way a transcript does not.
+- **Audio is kept 3 days by default**, compressed, then deleted; transcripts persist longer. A recording identifies a speaker in a way a transcript does not, so if you don't need to re-transcribe, set `DBK_KEEP_AUDIO_DAYS=0` and no voices are kept at all.
 
 ## What it does not do
 
@@ -42,7 +42,7 @@ If you deploy this beyond your own machine:
 
 1. **Tell people.** A standing note in your meeting invitations costs nothing and resolves most of this.
 2. **Prefer the platform's own transcription for meetings.** Teams and Zoom announce themselves and attribute speakers by name. This tool is better aimed at the parts of your day no meeting platform covers.
-3. **Keep retention short.** By default audio is not retained at all and transcripts are kept 90 days. Raising either needs a reason you'd be comfortable stating out loud.
+3. **Keep retention short.** Audio defaults to 3 days and transcripts to 90. Raising either needs a reason you'd be comfortable stating out loud; lowering audio to 0 is always defensible.
 4. **Turn it off for sensitive conversations.** `daybook stop` exists for this. HR matters, personnel discussions, anything under legal privilege.
 5. **Enable FileVault**, and don't sync `~/Daybook` to a cloud drive without thinking it through.
 
