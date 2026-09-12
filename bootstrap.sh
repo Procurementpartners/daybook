@@ -44,9 +44,8 @@ else
     $CLONE "$DEST" -- --quiet --depth 1 || { _clone_failed=1; }
   fi
   if [ "${_clone_failed:-0}" = "1" ]; then
-    echo "✗ clone failed — this is an internal repo, so you need to sign in first:"
-    echo "    gh auth login"
-    echo "  then run this again."
+    echo "✗ clone failed. Check your network, or clone manually:"
+    echo "    git clone https://github.com/Procurementpartners/daybook ~/.daybook-src"
     exit 1
   fi
 fi
