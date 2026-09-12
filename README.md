@@ -77,15 +77,13 @@ Individually:
 /plugin install daybook@procurementpartners-daybook
 ```
 
-Or list it for the org on a Team/Enterprise plan via **Organization settings → Plugins**, pointing at this repo. You choose how it reaches people:
+Or list it for the org on a Team/Enterprise plan via **Organization settings → Plugins**, pointing at this repo.
 
-| Preference | Effect |
-|---|---|
-| **Available** | Shows in the plugin catalog; members install it themselves |
-| **Installed by default** | Added for everyone automatically; members can uninstall |
-| **Required** | Added for everyone; members cannot uninstall |
+**Set it to "Available" — never "Installed by default" or "Required".**
 
-On Enterprise you can also set this per group. **Use "Available" for Daybook.** This is a recording tool, and people should choose it deliberately rather than find it already present. "Required" would be the wrong setting for anything that records colleagues — nobody should be unable to remove it.
+Organization settings offer all three, but only Available is appropriate here. Daybook records people. Someone should arrive at it by deciding to, not by finding it already in their Claude. "Required" is worse still: it would mean a colleague cannot remove an agent for a recording tool from their own environment.
+
+Available puts it in the catalog for anyone who wants it, which is the whole point of publishing it, without putting it in front of anyone who didn't ask.
 
 **This distributes the agent, not the recorder.** The plugin is instructions — it cannot record audio, run Whisper, or install anything. Each person still runs the local install on their Mac:
 

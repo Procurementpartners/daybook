@@ -30,6 +30,12 @@ Most organisations have policy on recording meetings, handling customer data, an
 - It does not encrypt anything beyond your disk's own encryption. Enable FileVault.
 - It does not redact. Salaries, health details, anything said near your desk lands in plain text.
 
+## If you distribute the plugin
+
+The Claude agent can be listed in your organization's plugin catalog. Set it to **Available** only — never "Installed by default" or "Required".
+
+The agent records nothing by itself, so this is not a safety control in the strict sense. It is a question of what you put in front of people. A recording tool that arrives unrequested in someone's environment reframes it as sanctioned and expected, which is exactly the assumption that gets consent skipped. Let people find it.
+
 ## Practical guidance
 
 If you deploy this beyond your own machine:
