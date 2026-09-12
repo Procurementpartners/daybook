@@ -41,8 +41,12 @@ DBK_KEEP_TRANSCRIPT_DAYS=90
 # Domain vocabulary to bias transcription (names, acronyms, product terms).
 DBK_PROMPT="GPO, vendor, supplier, ROI, SKU, punchout, requisition, Jira, API"
 
-# Weekend recording. Days listed here use the weekend window instead of the
-# weekday one. Leave DBK_WEEKEND_DAYS empty to disable weekend recording.
-DBK_WEEKEND_DAYS="6 7"
+# Weekend recording. Off by default — nothing is scheduled at the weekend.
+# To enable it, add the days to BOTH lists, e.g.
+#   DBK_WEEKDAYS="1 2 3 4 5 6 7"
+#   DBK_WEEKEND_DAYS="6 7"
+# Days in DBK_WEEKEND_DAYS use the weekend window below instead of the
+# weekday one, so a manual run at the weekend also honours these hours.
+DBK_WEEKEND_DAYS=""
 DBK_WEEKEND_START_HOUR=9
 DBK_WEEKEND_END_HOUR=21
