@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# vn — VoiceNotes: workday audio capture, local transcription, calendar-linked notes.
+# daybook — Daybook: workday audio capture, local transcription, calendar-linked notes.
 set -uo pipefail
 
-# Resolve through symlinks (vn is normally linked into ~/.local/bin)
+# Resolve through symlinks (daybook is normally linked into ~/.local/bin)
 _src="${BASH_SOURCE[0]}"
 while [ -L "$_src" ]; do
   _dir="$(cd -P "$(dirname "$_src")" && pwd)"
   _src="$(readlink "$_src")"
   [[ "$_src" != /* ]] && _src="$_dir/$_src"
 done
-VN_LIB="$(cd -P "$(dirname "$_src")/../lib" && pwd)"
-source "$VN_LIB/common.sh"
+DBK_LIB="$(cd -P "$(dirname "$_src")/../lib" && pwd)"
+source "$DBK_LIB/common.sh"
 
 BOLD=$'\033[1m'; DIM=$'\033[2m'; RED=$'\033[31m'; GRN=$'\033[32m'; YEL=$'\033[33m'; OFF=$'\033[0m'
 ok(){ echo "${GRN}✓${OFF} $*"; }
@@ -18,29 +18,29 @@ no(){ echo "${RED}✗${OFF} $*"; }
 warn(){ echo "${YEL}!${OFF} $*"; }
 
 usage(){ cat <<EOF
-${BOLD}vn${OFF} — VoiceNotes
+${BOLD}daybook${OFF} — Daybook
 
-  ${BOLD}vn start${OFF} [secs]   Record now (default: until ${VN_END_HOUR}:00)
-  ${BOLD}vn stop${OFF}           Stop recording
-  ${BOLD}vn status${OFF}         What's running, today's capture, disk use
-  ${BOLD}vn devices${OFF}        List input devices
-  ${BOLD}vn doctor${OFF}         Check dependencies, permissions, config
+  ${BOLD}daybook start${OFF} [secs]   Record now (default: until ${DBK_END_HOUR}:00)
+  ${BOLD}daybook stop${OFF}           Stop recording
+  ${BOLD}daybook status${OFF}         What's running, today's capture, disk use
+  ${BOLD}daybook devices${OFF}        List input devices
+  ${BOLD}daybook doctor${OFF}         Check dependencies, permissions, config
 
-  ${BOLD}vn transcribe${OFF} [day]   Transcribe segments (default: today)
-  ${BOLD}vn notes${OFF} [day]        Build calendar-linked notes
-  ${BOLD}vn today${OFF}              Transcribe + notes + show index
-  ${BOLD}vn show${OFF} [day]         Print the day's index
-  ${BOLD}vn read${OFF} [day]         Print the day's full transcript
-  ${BOLD}vn note${OFF} <n|name>      Print one meeting's note
-  ${BOLD}vn open${OFF} [day]         Open the notes folder in Finder
+  ${BOLD}daybook transcribe${OFF} [day]   Transcribe segments (default: today)
+  ${BOLD}daybook notes${OFF} [day]        Build calendar-linked notes
+  ${BOLD}daybook today${OFF}              Transcribe + notes + show index
+  ${BOLD}daybook show${OFF} [day]         Print the day's index
+  ${BOLD}daybook read${OFF} [day]         Print the day's full transcript
+  ${BOLD}daybook note${OFF} <n|name>      Print one meeting's note
+  ${BOLD}daybook open${OFF} [day]         Open the notes folder in Finder
 
-  ${BOLD}vn schedule on|off${OFF}    Enable/disable the ${VN_START_HOUR}:00 daily job
-  ${BOLD}vn purge${OFF}              Compress audio, apply retention
-  ${BOLD}vn setup-model${OFF}        Download the Whisper model
-  ${BOLD}vn uninstall${OFF}          Remove schedule (keeps your data)
+  ${BOLD}daybook schedule on|off${OFF}    Enable/disable the ${DBK_START_HOUR}:00 daily job
+  ${BOLD}daybook purge${OFF}              Compress audio, apply retention
+  ${BOLD}daybook setup-model${OFF}        Download the Whisper model
+  ${BOLD}daybook uninstall${OFF}          Remove schedule (keeps your data)
 
-Config: ${VN_CONF}
-Data:   ${VN_ROOT}
+Config: ${DBK_CONF}
+Data:   ${DBK_ROOT}
 EOF
 }
 
@@ -51,44 +51,44 @@ cmd_devices(){
   ffmpeg -f avfoundation -list_devices true -i "" 2>&1 \
     | awk '/audio devices/,0' | grep -E '^\[' | sed 's/\[AVFoundation[^]]*\] //'
   echo
-  echo "Set VN_DEVICE_NAME in ${VN_CONF} to match one by name."
+  echo "Set DBK_DEVICE_NAME in ${DBK_CONF} to match one by name."
 }
 
 cmd_doctor(){
-  echo "${BOLD}VoiceNotes doctor${OFF}"
+  echo "${BOLD}Daybook doctor${OFF}"
   command -v ffmpeg   >/dev/null && ok "ffmpeg $(ffmpeg -version | head -1 | awk '{print $3}')" || no "ffmpeg missing — brew install ffmpeg"
   command -v whisper-cli >/dev/null && ok "whisper-cli present" || no "whisper-cpp missing — brew install whisper-cpp"
   command -v python3  >/dev/null && ok "python3 present" || no "python3 missing"
 
-  [ -f "$VN_MODEL" ] && ok "model $(basename "$VN_MODEL") ($(du -h "$VN_MODEL" | cut -f1))" \
-                     || no "model missing — run: vn setup-model"
-  [ -f "$VN_CONF" ]  && ok "config $VN_CONF" || warn "no config, using defaults"
+  [ -f "$DBK_MODEL" ] && ok "model $(basename "$DBK_MODEL") ($(du -h "$DBK_MODEL" | cut -f1))" \
+                     || no "model missing — run: daybook setup-model"
+  [ -f "$DBK_CONF" ]  && ok "config $DBK_CONF" || warn "no config, using defaults"
 
-  if IDX=$(vn_device_index); then ok "input device [$IDX] ${VN_DEVICE_NAME:-<system default>}"
-  else no "input device '${VN_DEVICE_NAME}' not found — run: vn devices"; fi
+  if IDX=$(dbk_device_index); then ok "input device [$IDX] ${DBK_DEVICE_NAME:-<system default>}"
+  else no "input device '${DBK_DEVICE_NAME}' not found — run: daybook devices"; fi
 
   # Mic permission: a 1s probe that is silent at exactly -91dB means TCC denied.
   local t; t=$(mktemp).wav
   if ffmpeg -hide_banner -loglevel error -f avfoundation -i ":${IDX:-0}" -t 1 -ac 1 -ar 16000 -y "$t" 2>/dev/null; then
-    local pk; pk=$(vn_peak_db "$t")
+    local pk; pk=$(dbk_peak_db "$t")
     if [ "$pk" = "-91.0" ] || [ -z "$pk" ]; then no "mic returns digital silence — grant Microphone permission"
     else ok "microphone captured audio (peak ${pk} dB)"; fi
   else no "could not open the input device"
   fi
   rm -f "$t"
 
-  local avail; avail=$(df -h "$VN_ROOT" 2>/dev/null | tail -1 | awk '{print $4}')
+  local avail; avail=$(df -h "$DBK_ROOT" 2>/dev/null | tail -1 | awk '{print $4}')
   echo "  ${DIM}disk available: ${avail:-unknown} — budget ~1 GB per recorded day${OFF}"
 
-  launchctl list 2>/dev/null | grep -q voicenotes.record \
-    && ok "daily schedule active (${VN_START_HOUR}:00)" || warn "schedule not active — vn schedule on"
+  launchctl list 2>/dev/null | grep -q daybook.record \
+    && ok "daily schedule active (${DBK_START_HOUR}:00)" || warn "schedule not active — daybook schedule on"
 }
 
 cmd_start(){
   if pgrep -qf "avfoundation"; then warn "already recording"; return 1; fi
-  nohup "$VN_LIB/record.sh" ${1:+"$1"} >/dev/null 2>&1 &
+  nohup "$DBK_LIB/record.sh" ${1:+"$1"} >/dev/null 2>&1 &
   sleep 1
-  pgrep -qf "avfoundation" && ok "recording started" || no "failed to start — see $VN_ROOT/logs/"
+  pgrep -qf "avfoundation" && ok "recording started" || no "failed to start — see $DBK_ROOT/logs/"
 }
 
 cmd_stop(){
@@ -100,35 +100,35 @@ cmd_status(){
   local DAY; DAY=$(date +%Y-%m-%d)
   if pgrep -qf "avfoundation"; then ok "recording now"; else echo "  not recording"; fi
   local segs txts
-  segs=$(ls "$VN_ROOT/audio/$DAY"/seg-*.wav 2>/dev/null | wc -l | tr -d ' ')
-  txts=$(ls "$VN_ROOT/transcripts/$DAY"/*.txt 2>/dev/null | wc -l | tr -d ' ')
+  segs=$(ls "$DBK_ROOT/audio/$DAY"/seg-*.wav 2>/dev/null | wc -l | tr -d ' ')
+  txts=$(ls "$DBK_ROOT/transcripts/$DAY"/*.txt 2>/dev/null | wc -l | tr -d ' ')
   echo "  today: ${segs} segments, ${txts} transcribed"
-  [ -d "$VN_ROOT/notes/$DAY" ] && echo "  notes: $VN_ROOT/notes/$DAY"
-  echo "  data:  $(du -sh "$VN_ROOT" 2>/dev/null | cut -f1) in $VN_ROOT"
-  launchctl list 2>/dev/null | grep -q voicenotes.record \
-    && echo "  schedule: on (${VN_START_HOUR}:00 weekdays)" || echo "  schedule: off"
+  [ -d "$DBK_ROOT/notes/$DAY" ] && echo "  notes: $DBK_ROOT/notes/$DAY"
+  echo "  data:  $(du -sh "$DBK_ROOT" 2>/dev/null | cut -f1) in $DBK_ROOT"
+  launchctl list 2>/dev/null | grep -q daybook.record \
+    && echo "  schedule: on (${DBK_START_HOUR}:00 weekdays)" || echo "  schedule: off"
 }
 
 cmd_notes(){
   local DAY; DAY=$(day_arg "${1:-}")
-  local CAL="$VN_ROOT/calendar/$DAY.json"
+  local CAL="$DBK_ROOT/calendar/$DAY.json"
   if [ ! -f "$CAL" ]; then
     warn "no calendar for $DAY — notes will have no meeting structure"
     echo "  ${DIM}see docs/calendar.md to populate $CAL${OFF}"
   fi
-  VN_ROOT="$VN_ROOT" python3 "$VN_LIB/make-notes.py" "$DAY"
+  DBK_ROOT="$DBK_ROOT" python3 "$DBK_LIB/make-notes.py" "$DAY"
 }
 
 cmd_show(){
   local DAY; DAY=$(day_arg "${1:-}")
-  local IDX="$VN_ROOT/notes/$DAY/00-index.md"
-  [ -f "$IDX" ] && cat "$IDX" || echo "no notes for $DAY — run: vn notes $DAY"
+  local IDX="$DBK_ROOT/notes/$DAY/00-index.md"
+  [ -f "$IDX" ] && cat "$IDX" || echo "no notes for $DAY — run: daybook notes $DAY"
 }
 
 # Full day's transcript as one stream, in time order.
 cmd_read(){
   local DAY; DAY=$(day_arg "${1:-}")
-  local T="$VN_ROOT/transcripts/$DAY"
+  local T="$DBK_ROOT/transcripts/$DAY"
   if [ ! -d "$T" ] || ! ls "$T"/*.txt >/dev/null 2>&1; then
     echo "no transcripts for $DAY"; return 1
   fi
@@ -142,7 +142,7 @@ cmd_read(){
 cmd_note(){
   local DAY N; DAY=$(date +%Y-%m-%d); N="${1:-}"
   if [[ "${2:-}" != "" ]]; then DAY="$1"; N="$2"; fi
-  local D="$VN_ROOT/notes/$DAY"
+  local D="$DBK_ROOT/notes/$DAY"
   [ -d "$D" ] || { echo "no notes for $DAY"; return 1; }
   if [ -z "$N" ]; then cmd_show "$DAY"; return; fi
   local f
@@ -153,13 +153,13 @@ cmd_note(){
 
 cmd_open(){
   local DAY; DAY=$(day_arg "${1:-}")
-  local D="$VN_ROOT/notes/$DAY"
-  [ -d "$D" ] || D="$VN_ROOT"
+  local D="$DBK_ROOT/notes/$DAY"
+  [ -d "$D" ] || D="$DBK_ROOT"
   open "$D"
 }
 
 cmd_today(){
-  "$VN_LIB/transcribe.sh"
+  "$DBK_LIB/transcribe.sh"
   cmd_notes
   echo; cmd_show
 }
@@ -168,40 +168,40 @@ cmd_schedule(){
   local action="${1:-}" plist="$HOME/Library/LaunchAgents"
   case "$action" in
     on)
-      "$VN_LIB/../bin/vn-install-schedule" 2>/dev/null || {
+      "$DBK_LIB/../bin/daybook-install-schedule" 2>/dev/null || {
         no "schedule installer not found; see docs/install.md"; return 1; }
       ;;
     off)
-      launchctl bootout "gui/$UID/com.voicenotes.record" 2>/dev/null
-      launchctl bootout "gui/$UID/com.voicenotes.transcribe" 2>/dev/null
+      launchctl bootout "gui/$UID/com.daybook.record" 2>/dev/null
+      launchctl bootout "gui/$UID/com.daybook.transcribe" 2>/dev/null
       ok "schedule disabled"
       ;;
-    *) echo "usage: vn schedule on|off"; return 1;;
+    *) echo "usage: daybook schedule on|off"; return 1;;
   esac
 }
 
 cmd_setup_model(){
-  vn_dirs
+  dbk_dirs
   local url="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin"
-  [ -f "$VN_MODEL" ] && { ok "model already present"; return 0; }
+  [ -f "$DBK_MODEL" ] && { ok "model already present"; return 0; }
   echo "Downloading large-v3-turbo (~1.5 GB)…"
-  curl -L --progress-bar -o "$VN_MODEL" "$url" && ok "model ready at $VN_MODEL"
+  curl -L --progress-bar -o "$DBK_MODEL" "$url" && ok "model ready at $DBK_MODEL"
 }
 
 cmd_uninstall(){
   cmd_schedule off
-  rm -f "$HOME/Library/LaunchAgents/com.voicenotes."*.plist
-  ok "schedule removed. Your data in $VN_ROOT was left untouched."
+  rm -f "$HOME/Library/LaunchAgents/com.daybook."*.plist
+  ok "schedule removed. Your data in $DBK_ROOT was left untouched."
 }
 
-vn_dirs
+dbk_dirs
 case "${1:-}" in
   start)        shift; cmd_start "${1:-}";;
   stop)         cmd_stop;;
   status)       cmd_status;;
   devices)      cmd_devices;;
   doctor)       cmd_doctor;;
-  transcribe)   shift; "$VN_LIB/transcribe.sh" "${1:-}";;
+  transcribe)   shift; "$DBK_LIB/transcribe.sh" "${1:-}";;
   notes)        shift; cmd_notes "${1:-}";;
   today)        cmd_today;;
   show)         shift; cmd_show "${1:-}";;
@@ -209,7 +209,7 @@ case "${1:-}" in
   note)         shift; cmd_note "${1:-}" "${2:-}";;
   open)         shift; cmd_open "${1:-}";;
   schedule)     shift; cmd_schedule "${1:-}";;
-  purge)        "$VN_LIB/purge.sh";;
+  purge)        "$DBK_LIB/purge.sh";;
   setup-model)  cmd_setup_model;;
   uninstall)    cmd_uninstall;;
   ""|-h|--help|help) usage;;

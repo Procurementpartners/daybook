@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
-# VoiceNotes installer. Safe to re-run.
+# Daybook installer. Safe to re-run.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONF="$HOME/.voicenotes.conf"
+CONF="$HOME/.daybook.conf"
 BIN="$HOME/.local/bin"
 
-echo "VoiceNotes installer"
+echo "Daybook installer"
 echo
+
+# Daybook is macOS-only: it records via ffmpeg's avfoundation input and
+# schedules with launchd. Neither exists elsewhere.
+if [ "$(uname -s)" != "Darwin" ]; then
+  echo "✗ Daybook requires macOS (uses avfoundation and launchd). Detected: $(uname -s)"
+  exit 1
+fi
 
 # 1. Dependencies
 if ! command -v brew >/dev/null; then
@@ -27,43 +34,43 @@ fi
 
 # 3. Pick an input device if one isn't set
 source "$CONF"
-if [ -z "${VN_DEVICE_NAME:-}" ]; then
+if [ -z "${DBK_DEVICE_NAME:-}" ]; then
   echo
   echo "Available audio inputs:"
   ffmpeg -f avfoundation -list_devices true -i "" 2>&1 \
     | awk '/audio devices/,0' | grep -E '^\[' | sed 's/\[AVFoundation[^]]*\] /  /'
   echo
-  echo "  Edit VN_DEVICE_NAME in $CONF to pick one (blank = system default)."
+  echo "  Edit DBK_DEVICE_NAME in $CONF to pick one (blank = system default)."
 fi
 
 # 4. CLI on PATH
 mkdir -p "$BIN"
-ln -sf "$HERE/bin/vn" "$BIN/vn"
-echo "✓ vn linked into $BIN"
+ln -sf "$HERE/bin/daybook" "$BIN/daybook"
+echo "✓ daybook linked into $BIN"
 case ":$PATH:" in
   *":$BIN:"*) ;;
   *) echo "  ! add to your shell profile:  export PATH=\"\$HOME/.local/bin:\$PATH\"";;
 esac
 
-# 5. Claude skill — makes `vn` usable by asking in plain language
+# 5. Claude skill — makes `daybook` usable by asking in plain language
 SKILLDIR="$HOME/.claude/skills"
 mkdir -p "$SKILLDIR"
-ln -sfn "$HERE/.claude/skills/voicenotes" "$SKILLDIR/voicenotes"
-echo "✓ voicenotes skill linked into $SKILLDIR"
+ln -sfn "$HERE/.claude/skills/daybook" "$SKILLDIR/daybook"
+echo "✓ daybook skill linked into $SKILLDIR"
 
 # 6. Model
 source "$HERE/lib/common.sh"
-if [ -f "$VN_MODEL" ]; then echo "✓ whisper model present"
-else echo "→ downloading whisper model (~1.5 GB)…"; "$HERE/bin/vn" setup-model; fi
+if [ -f "$DBK_MODEL" ]; then echo "✓ whisper model present"
+else echo "→ downloading whisper model (~1.5 GB)…"; "$HERE/bin/daybook" setup-model; fi
 
 cat <<EOF
 
 Done. Next:
 
-  vn doctor          check everything is wired up
-  vn start 60        record one minute as a test
-  vn today           transcribe it and build notes
-  vn schedule on     enable the daily job
+  daybook doctor          check everything is wired up
+  daybook start 60        record one minute as a test
+  daybook today           transcribe it and build notes
+  daybook schedule on     enable the daily job
 
 Before you enable the schedule, read CONSENT.md — this records audio
 in your workspace, and that is not only a technical decision.

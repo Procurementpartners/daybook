@@ -36,8 +36,8 @@ If you deploy this beyond your own machine:
 1. **Tell people.** A standing note in your meeting invitations costs nothing and resolves most of this.
 2. **Prefer the platform's own transcription for meetings.** Teams and Zoom announce themselves and attribute speakers by name. This tool is better aimed at the parts of your day no meeting platform covers.
 3. **Shorten retention.** The defaults keep audio 7 days and transcripts 90. Shorter is usually defensible; longer needs a reason.
-4. **Turn it off for sensitive conversations.** `vn stop` exists for this. HR matters, personnel discussions, anything under legal privilege.
-5. **Enable FileVault**, and don't sync `~/VoiceNotes` to a cloud drive without thinking it through.
+4. **Turn it off for sensitive conversations.** `daybook stop` exists for this. HR matters, personnel discussions, anything under legal privilege.
+5. **Enable FileVault**, and don't sync `~/Daybook` to a cloud drive without thinking it through.
 
 ## The honest summary
 

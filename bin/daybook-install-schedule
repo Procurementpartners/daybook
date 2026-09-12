@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# Installs the launchd agents that run Daybook on a schedule.
+# Separated from `daybook` so the privileged step is explicit and auditable.
+set -uo pipefail
+DBK_LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)"
+source "$DBK_LIB/common.sh"
+
+LA="$HOME/Library/LaunchAgents"
+mkdir -p "$LA"
+
+# Build one <dict> per configured day. Weekend days use the weekend start hour.
+# NOTE: common.sh may have already swapped DBK_START_HOUR for today; read the
+# config's own values here so the installed schedule is day-correct, not today-correct.
+_wd_start=$(sed -n 's/^DBK_START_HOUR=\([0-9]*\).*/\1/p' "$DBK_CONF" 2>/dev/null | head -1)
+_we_start=$(sed -n 's/^DBK_WEEKEND_START_HOUR=\([0-9]*\).*/\1/p' "$DBK_CONF" 2>/dev/null | head -1)
+: "${_wd_start:=$DBK_START_HOUR}"
+: "${_we_start:=$_wd_start}"
+
+intervals=""
+for d in $DBK_WEEKDAYS; do
+  h="$_wd_start"
+  case " ${DBK_WEEKEND_DAYS:-} " in *" $d "*) h="$_we_start";; esac
+  intervals="$intervals
+    <dict><key>Weekday</key><integer>$d</integer><key>Hour</key><integer>$h</integer><key>Minute</key><integer>0</integer></dict>"
+done
+
+cat > "$LA/com.daybook.record.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.daybook.record</string>
+  <key>ProgramArguments</key>
+  <array><string>$DBK_LIB/record.sh</string></array>
+  <key>EnvironmentVariables</key>
+  <dict><key>DBK_CONF</key><string>$DBK_CONF</string></dict>
+  <key>StartCalendarInterval</key>
+  <array>$intervals
+  </array>
+  <key>StandardErrorPath</key><string>$DBK_ROOT/logs/launchd-record.err</string>
+  <key>RunAtLoad</key><false/>
+</dict></plist>
+EOF
+
+cat > "$LA/com.daybook.transcribe.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.daybook.transcribe</string>
+  <key>ProgramArguments</key>
+  <array><string>$DBK_LIB/transcribe.sh</string></array>
+  <key>EnvironmentVariables</key>
+  <dict><key>DBK_CONF</key><string>$DBK_CONF</string></dict>
+  <key>StartInterval</key><integer>600</integer>
+  <key>StandardErrorPath</key><string>$DBK_ROOT/logs/launchd-transcribe.err</string>
+  <key>Nice</key><integer>10</integer>
+</dict></plist>
+EOF
+
+cat > "$LA/com.daybook.purge.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.daybook.purge</string>
+  <key>ProgramArguments</key>
+  <array><string>$DBK_LIB/purge.sh</string></array>
+  <key>EnvironmentVariables</key>
+  <dict><key>DBK_CONF</key><string>$DBK_CONF</string></dict>
+  <key>StartCalendarInterval</key>
+  <array><dict><key>Hour</key><integer>$(( DBK_END_HOUR + 2 ))</integer><key>Minute</key><integer>30</integer></dict></array>
+  <key>StandardErrorPath</key><string>$DBK_ROOT/logs/launchd-purge.err</string>
+  <key>Nice</key><integer>15</integer>
+</dict></plist>
+EOF
+
+for job in record transcribe purge; do
+  launchctl bootout "gui/$UID/com.daybook.$job" 2>/dev/null
+  launchctl bootstrap "gui/$UID" "$LA/com.daybook.$job.plist" 2>/dev/null \
+    && echo "✓ com.daybook.$job" \
+    || echo "✗ com.daybook.$job failed to load"
+done
+
+_wd_end=$(sed -n 's/^DBK_END_HOUR=\([0-9]*\).*/\1/p' "$DBK_CONF" 2>/dev/null | head -1)
+_we_end=$(sed -n 's/^DBK_WEEKEND_END_HOUR=\([0-9]*\).*/\1/p' "$DBK_CONF" 2>/dev/null | head -1)
+: "${_wd_end:=$DBK_END_HOUR}"; : "${_we_end:=$_wd_end}"
+_names=(Mon Tue Wed Thu Fri Sat Sun)
+
+echo
+echo "Schedule:"
+for d in $DBK_WEEKDAYS; do
+  s="$_wd_start"; e="$_wd_end"
+  case " ${DBK_WEEKEND_DAYS:-} " in *" $d "*) s="$_we_start"; e="$_we_end";; esac
+  printf "  %s  %02d:00 – %02d:00\n" "${_names[$((d-1))]}" "$s" "$e"
+done
+echo
+echo "Disable any time with: daybook schedule off"

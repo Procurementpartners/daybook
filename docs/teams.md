@@ -1,13 +1,13 @@
 # Using Teams transcripts instead of the microphone
 
-Where a Microsoft Teams transcript exists, it beats the local recording on every axis that matters: speaker names, no headphone problem, and the meeting announced itself to participants. VoiceNotes prefers it automatically.
+Where a Microsoft Teams transcript exists, it beats the local recording on every axis that matters: speaker names, no headphone problem, and the meeting announced itself to participants. Daybook prefers it automatically.
 
 ## How the preference works
 
 When building notes for an event, `make-notes.py` looks for:
 
 ```
-~/VoiceNotes/teams/<YYYY-MM-DD>/<HHMM>-<subject-slug>.txt
+~/Daybook/teams/<YYYY-MM-DD>/<HHMM>-<subject-slug>.txt
 ```
 
 `HHMM` is the event's **local** start time and the slug is its subject lowercased with non-word characters stripped — the same slug used for the note filename. If that file exists and is non-empty, it becomes the note's transcript and the mic version is folded into a collapsed `<details>` block underneath. If it doesn't exist, the mic transcript is used directly.
@@ -48,7 +48,7 @@ This is a tenant-wide setting and it governs read access for every app, so it is
 A calendar event read through Graph carries a `meetingTranscriptUrl` field. Pass it verbatim to a resource read and you get the transcript back with speaker names. In Claude Code with a Microsoft connector, this works:
 
 > For each of today's Teams meetings, fetch the transcript and save it to
-> `~/VoiceNotes/teams/<date>/<HHMM>-<slug>.txt` using the VoiceNotes naming convention.
+> `~/Daybook/teams/<date>/<HHMM>-<slug>.txt` using the Daybook naming convention.
 
 A scheduled morning task can do the same thing unattended.
 

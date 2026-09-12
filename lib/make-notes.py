@@ -2,15 +2,15 @@
 """
 Slice a day's timestamped transcript into per-meeting notes using Outlook events.
 
-Reads : ~/VoiceNotes/transcripts/<day>/*.txt   lines like "[HH:MM:SS] text"
-        ~/VoiceNotes/calendar/<day>.json       events with UTC start/end
-Writes: ~/VoiceNotes/notes/<day>/NN-<slug>.md  plus 00-index.md and unscheduled.md
+Reads : ~/Daybook/transcripts/<day>/*.txt   lines like "[HH:MM:SS] text"
+        ~/Daybook/calendar/<day>.json       events with UTC start/end
+Writes: ~/Daybook/notes/<day>/NN-<slug>.md  plus 00-index.md and unscheduled.md
 """
 import json, re, sys, os
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path(os.environ.get("VN_ROOT", str(Path.home() / "VoiceNotes")))
+ROOT = Path(os.environ.get("DBK_ROOT", str(Path.home() / "Daybook")))
 day = sys.argv[1] if len(sys.argv) > 1 else datetime.now().strftime("%Y-%m-%d")
 
 tdir = ROOT / "transcripts" / day

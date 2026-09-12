@@ -1,15 +1,15 @@
 ---
-name: voicenotes
-description: Turn the day's recorded audio into meeting notes. Use when the user asks what happened today, wants their meeting notes or action items, asks to catch up on a meeting they missed or half-remember, wants to know what was decided or who owns what, or mentions VoiceNotes, "my recordings", "my transcripts", or the `vn` command. Also use to start or stop recording, check capture status, or diagnose the recorder.
+name: daybook
+description: Turn the day's recorded audio into meeting notes. Use when the user asks what happened today, wants their meeting notes or action items, asks to catch up on a meeting they missed or half-remember, wants to know what was decided or who owns what, or mentions Daybook, "my recordings", "my transcripts", or the `daybook` command. Also use to start or stop recording, check capture status, or diagnose the recorder.
 ---
 
-# VoiceNotes
+# Daybook
 
-VoiceNotes records the user's workday, transcribes it locally with Whisper, and slices it into per-meeting notes using their calendar. The `vn` CLI does capture and transcription. You do the parts it cannot: fetching the calendar, fetching Teams transcripts, and telling the user what actually happened.
+Daybook records the user's workday, transcribes it locally with Whisper, and slices it into per-meeting notes using their calendar. The `daybook` CLI does capture and transcription. You do the parts it cannot: fetching the calendar, fetching Teams transcripts, and telling the user what actually happened.
 
 ## Before anything else
 
-Run `vn status`. It tells you whether recording is live, how many segments exist, and whether the schedule is on. If `vn` is not found, the tool isn't installed — point at `install.sh` in the repo rather than trying to work around it.
+Run `daybook status`. It tells you whether recording is live, how many segments exist, and whether the schedule is on. If `daybook` is not found, the tool isn't installed — point at `install.sh` in the repo rather than trying to work around it.
 
 ## The daily flow
 
@@ -17,7 +17,7 @@ When the user asks about their day, their meetings, or their notes, do all four 
 
 ### 1. Fetch the calendar
 
-Notes have no meeting structure without this. Check whether `~/VoiceNotes/calendar/<YYYY-MM-DD>.json` already exists; if it does and covers the day, skip ahead.
+Notes have no meeting structure without this. Check whether `~/Daybook/calendar/<YYYY-MM-DD>.json` already exists; if it does and covers the day, skip ahead.
 
 Otherwise pull the day's events from the user's calendar connector (Outlook or Google) and write that file:
 
@@ -43,7 +43,7 @@ A Teams transcript beats the microphone on every axis: real speaker names, unaff
 Read a calendar event through Graph and use its `meetingTranscriptUrl` field verbatim with a resource read. Save what comes back to:
 
 ```
-~/VoiceNotes/teams/<YYYY-MM-DD>/<HHMM>-<subject-slug>.txt
+~/Daybook/teams/<YYYY-MM-DD>/<HHMM>-<subject-slug>.txt
 ```
 
 `HHMM` is the event's **local** start time; the slug is the subject lowercased with non-word characters stripped and spaces turned to hyphens. `make-notes.py` picks these up automatically and folds the mic version underneath.
@@ -53,14 +53,14 @@ If this returns `GraphAccessToTranscriptsDisabled`, the tenant has Graph transcr
 ### 3. Build the notes
 
 ```bash
-vn today
+daybook today
 ```
 
 That transcribes any pending segments, rebuilds the notes, and prints the index.
 
 ### 4. Summarize — this is the actual value
 
-Read the per-meeting notes in `~/VoiceNotes/notes/<day>/` and give the user, per meeting that has content:
+Read the per-meeting notes in `~/Daybook/notes/<day>/` and give the user, per meeting that has content:
 
 - **What was decided** — concretely, not "the team discussed options"
 - **Action items with an owner**, quoting the line that assigns it
@@ -83,13 +83,13 @@ These are machine transcripts of far-field audio. They are not verbatim minutes,
 
 | The user wants | Do this |
 |---|---|
-| Start/stop recording | `vn start [secs]` / `vn stop` |
-| Read the raw transcript | `vn read [day]` |
-| One meeting | `vn note <name>` |
-| Search across days | `grep -ri "<term>" ~/VoiceNotes/transcripts/` |
-| Change hours, device, retention | Edit `~/.voicenotes.conf`, then `vn schedule on` |
-| Something is broken | `vn doctor` first — it checks deps, mic permission, device, disk |
-| Free up space | `vn purge` |
+| Start/stop recording | `daybook start [secs]` / `daybook stop` |
+| Read the raw transcript | `daybook read [day]` |
+| One meeting | `daybook note <name>` |
+| Search across days | `grep -ri "<term>" ~/Daybook/transcripts/` |
+| Change hours, device, retention | Edit `~/.daybook.conf`, then `daybook schedule on` |
+| Something is broken | `daybook doctor` first — it checks deps, mic permission, device, disk |
+| Free up space | `daybook purge` |
 
 ## Privacy
 

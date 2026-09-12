@@ -1,9 +1,9 @@
 # Supplying calendar data
 
-`vn notes` reads one JSON file per day:
+`daybook notes` reads one JSON file per day:
 
 ```
-~/VoiceNotes/calendar/YYYY-MM-DD.json
+~/Daybook/calendar/YYYY-MM-DD.json
 ```
 
 A shell script can't reach Outlook or Google Calendar on its own, so this file has to be written by something that can. Three options, easiest first.
@@ -34,7 +34,7 @@ Times may be UTC (`Z` suffix) or carry an explicit offset — `make-notes.py` co
 If you use Claude Code with an Outlook or Google connector, ask it to write tomorrow's file. A scheduled task each morning keeps it current with no effort:
 
 > Fetch my calendar events for today and write them to
-> `~/VoiceNotes/calendar/YYYY-MM-DD.json` in the VoiceNotes format.
+> `~/Daybook/calendar/YYYY-MM-DD.json` in the Daybook format.
 
 This is how the tool was built and is the least work to maintain.
 
@@ -55,4 +55,4 @@ Then reshape into the JSON above. Note this only sees calendars synced into Cale
 
 ## No calendar at all
 
-`vn notes` still works. Every transcript line lands in `unscheduled.md`, timestamped. You lose the per-meeting split, nothing else.
+`daybook notes` still works. Every transcript line lands in `unscheduled.md`, timestamped. You lose the per-meeting split, nothing else.
