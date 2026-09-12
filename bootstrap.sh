@@ -25,27 +25,15 @@ if ! command -v git >/dev/null; then
   exit 1
 fi
 
-# Daybook lives in an internal repo, so the clone needs authentication.
-# `gh` carries it; plain git needs SSH keys or a credential helper.
-CLONE="git clone --quiet --depth 1"
-if command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
-  CLONE="gh repo clone Procurementpartners/daybook --"
-fi
-
 if [ -d "$DEST/.git" ]; then
   echo "→ updating existing install at $DEST"
-  git -C "$DEST" pull --ff-only --quiet || {
-    echo "! could not fast-forward; leaving your checkout alone"; }
+  git -C "$DEST" pull --ff-only --quiet \
+    || echo "! could not fast-forward; leaving your checkout alone"
 else
   echo "→ downloading to $DEST"
-  if [ "$CLONE" = "git clone --quiet --depth 1" ]; then
-    $CLONE "$REPO" "$DEST" || { _clone_failed=1; }
-  else
-    $CLONE "$DEST" -- --quiet --depth 1 || { _clone_failed=1; }
-  fi
-  if [ "${_clone_failed:-0}" = "1" ]; then
+  if ! git clone --quiet --depth 1 "$REPO" "$DEST"; then
     echo "✗ clone failed. Check your network, or clone manually:"
-    echo "    git clone https://github.com/Procurementpartners/daybook ~/.daybook-src"
+    echo "    git clone $REPO $DEST"
     exit 1
   fi
 fi
