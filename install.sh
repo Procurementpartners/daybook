@@ -45,7 +45,13 @@ case ":$PATH:" in
   *) echo "  ! add to your shell profile:  export PATH=\"\$HOME/.local/bin:\$PATH\"";;
 esac
 
-# 5. Model
+# 5. Claude skill — makes `vn` usable by asking in plain language
+SKILLDIR="$HOME/.claude/skills"
+mkdir -p "$SKILLDIR"
+ln -sfn "$HERE/.claude/skills/voicenotes" "$SKILLDIR/voicenotes"
+echo "✓ voicenotes skill linked into $SKILLDIR"
+
+# 6. Model
 source "$HERE/lib/common.sh"
 if [ -f "$VN_MODEL" ]; then echo "✓ whisper model present"
 else echo "→ downloading whisper model (~1.5 GB)…"; "$HERE/bin/vn" setup-model; fi

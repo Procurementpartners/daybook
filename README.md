@@ -41,6 +41,18 @@ vn purge           # compress audio, apply retention
 
 Notes land in `~/VoiceNotes/notes/YYYY-MM-DD/` as Markdown — one file per meeting plus `00-index.md`.
 
+## The Claude skill
+
+`install.sh` links a skill into `~/.claude/skills/voicenotes`, so instead of remembering commands you can ask:
+
+> what happened in my meetings today?
+> what did I commit to in the vendor call?
+> catch me up on the Jira sync I missed
+
+The skill does the parts the CLI can't. It pulls your calendar into the JSON that `vn notes` needs, fetches Teams transcripts where the tenant allows it, runs `vn today`, then reads the notes and tells you what was decided and who owns what.
+
+It also knows how to read these transcripts honestly — it won't attribute a line to a named person when the source is mic audio with no speaker labels, and it flags a one-sided call rather than summarizing half a conversation as the whole thing.
+
 ## Configuration
 
 Everything lives in `~/.voicenotes.conf`:
