@@ -66,6 +66,27 @@ daybook purge           # compress audio, apply retention
 
 Notes land in `~/Daybook/notes/YYYY-MM-DD/` as Markdown — one file per meeting plus `00-index.md`.
 
+## Installing the agent org-wide
+
+The repo doubles as a Claude Code plugin marketplace, so the agent can be distributed to the team without anyone copying files.
+
+Individually:
+
+```
+/plugin marketplace add Procurementpartners/daybook
+/plugin install daybook@procurementpartners-daybook
+```
+
+Or push it to everyone on a Team/Enterprise plan via **Organization settings → Plugins**, pointing at this repo. Team members get the skill with no action of their own.
+
+**This distributes the agent, not the recorder.** The plugin is instructions — it cannot record audio, run Whisper, or install anything. Each person still runs the local install on their Mac:
+
+```bash
+gh repo clone Procurementpartners/daybook ~/.daybook-src && ~/.daybook-src/install.sh
+```
+
+If someone has the plugin but not the CLI, the skill tells them exactly that instead of trying to work around it.
+
 ## The Claude skill
 
 `install.sh` links a skill into `~/.claude/skills/daybook`, so instead of remembering commands you can ask:
@@ -152,8 +173,8 @@ Read [CONSENT.md](CONSENT.md). This tool records people. That is a legal and cul
 ## Layout
 
 ```
-bin/daybook                    CLI
-bin/daybook-install-schedule   launchd installer (kept separate and explicit)
+scripts/daybook                    CLI
+scripts/daybook-install-schedule   launchd installer (kept separate and explicit)
 lib/record.sh             segmented ffmpeg capture
 lib/transcribe.sh         silence gate + Whisper
 lib/wallclock.py          whisper offsets → clock time

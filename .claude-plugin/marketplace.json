@@ -1,0 +1,20 @@
+{
+  "name": "procurementpartners-daybook",
+  "owner": {
+    "name": "Procurement Partners",
+    "url": "https://github.com/Procurementpartners/daybook"
+  },
+  "plugins": [
+    {
+      "name": "daybook",
+      "source": "./plugins/daybook",
+      "displayName": "Daybook",
+      "description": "Turn your recorded workday into calendar-linked meeting notes. Requires the Daybook CLI installed locally (macOS only).",
+      "version": "1.0.0",
+      "homepage": "https://github.com/Procurementpartners/daybook",
+      "repository": "https://github.com/Procurementpartners/daybook",
+      "keywords": ["meeting-notes", "transcription", "calendar", "macos"],
+      "category": "productivity"
+    }
+  ]
+}

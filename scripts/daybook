@@ -179,7 +179,7 @@ cmd_schedule(){
   local action="${1:-}" plist="$HOME/Library/LaunchAgents"
   case "$action" in
     on)
-      "$DBK_LIB/../bin/daybook-install-schedule" 2>/dev/null || {
+      "$DBK_LIB/../scripts/daybook-install-schedule" 2>/dev/null || {
         no "schedule installer not found; see docs/install.md"; return 1; }
       ;;
     off)

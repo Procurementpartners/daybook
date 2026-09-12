@@ -1,0 +1,9 @@
+{
+  "name": "daybook",
+  "description": "Turn your recorded workday into calendar-linked meeting notes. Fetches your calendar, prefers Teams transcripts where available, and summarises what was decided. Requires the Daybook CLI installed locally (macOS only).",
+  "version": "1.0.0",
+  "author": {
+    "name": "Procurement Partners"
+  },
+  "homepage": "https://github.com/Procurementpartners/daybook"
+}

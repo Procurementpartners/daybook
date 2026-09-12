@@ -9,7 +9,15 @@ Daybook records the user's workday, transcribes it locally with Whisper, and sli
 
 ## Before anything else
 
-Run `daybook status`. It tells you whether recording is live, how many segments exist, and whether the schedule is on. If `daybook` is not found, the tool isn't installed — point at `install.sh` in the repo rather than trying to work around it.
+Run `daybook status`. It tells you whether recording is live, how many segments exist, and whether the schedule is on.
+
+If `daybook` is not found, the CLI isn't installed. This skill can be installed on its own as a plugin, but it cannot record or transcribe anything by itself — that's a local macOS install. Tell the user:
+
+```
+gh repo clone Procurementpartners/daybook ~/.daybook-src && ~/.daybook-src/install.sh
+```
+
+Then stop. Don't attempt to record, install ffmpeg, or work around the missing CLI.
 
 ## The daily flow
 

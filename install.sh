@@ -45,7 +45,7 @@ fi
 
 # 4. CLI on PATH
 mkdir -p "$BIN"
-ln -sf "$HERE/bin/daybook" "$BIN/daybook"
+ln -sf "$HERE/scripts/daybook" "$BIN/daybook"
 echo "✓ daybook linked into $BIN"
 case ":$PATH:" in
   *":$BIN:"*) ;;
@@ -55,13 +55,13 @@ esac
 # 5. Claude skill — makes `daybook` usable by asking in plain language
 SKILLDIR="$HOME/.claude/skills"
 mkdir -p "$SKILLDIR"
-ln -sfn "$HERE/.claude/skills/daybook" "$SKILLDIR/daybook"
+ln -sfn "$HERE/plugins/daybook/skills/daybook" "$SKILLDIR/daybook"
 echo "✓ daybook skill linked into $SKILLDIR"
 
 # 6. Model
 source "$HERE/lib/common.sh"
 if [ -f "$DBK_MODEL" ]; then echo "✓ whisper model present"
-else echo "→ downloading whisper model (~1.5 GB)…"; "$HERE/bin/daybook" setup-model; fi
+else echo "→ downloading whisper model (~1.5 GB)…"; "$HERE/scripts/daybook" setup-model; fi
 
 cat <<EOF
 
