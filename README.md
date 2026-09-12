@@ -29,11 +29,21 @@ The wall-clock stamps are the whole trick. Because every line carries a real tim
 
 ## Install
 
+One line:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/<org>/daybook-mac/main/bootstrap.sh | bash
+```
+
+Or clone it yourself:
+
 ```bash
 git clone <your-remote> daybook && cd daybook
 ./install.sh
 daybook doctor
 ```
+
+Both end in the same place. `bootstrap.sh` just fetches the repo to `~/.daybook-src` and runs `install.sh`; re-running it updates in place.
 
 `install.sh` installs `ffmpeg` and `whisper-cpp` via Homebrew, writes `~/.daybook.conf`, links `daybook` into `~/.local/bin`, and downloads the Whisper model (~1.5 GB).
 
