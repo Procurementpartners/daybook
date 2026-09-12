@@ -29,21 +29,27 @@ The wall-clock stamps are the whole trick. Because every line carries a real tim
 
 ## Install
 
-One line:
+Daybook lives in an **internal** repo, so you need to be signed in to GitHub first:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Procurementpartners/daybook/main/bootstrap.sh | bash
+gh auth login
 ```
 
-Or clone it yourself:
+Then one line:
 
 ```bash
-git clone <your-remote> daybook && cd daybook
-./install.sh
+gh repo clone Procurementpartners/daybook ~/.daybook-src && ~/.daybook-src/install.sh
+```
+
+Then check it:
+
+```bash
 daybook doctor
 ```
 
-Both end in the same place. `bootstrap.sh` just fetches the repo to `~/.daybook-src` and runs `install.sh`; re-running it updates in place.
+To update later, re-run `~/.daybook-src/bootstrap.sh` — it pulls and reinstalls in place.
+
+> A `curl | bash` install isn't possible while the repo is internal: `raw.githubusercontent.com` returns 404 to unauthenticated requests. If the repo is ever made public, `bootstrap.sh` becomes curl-able as-is.
 
 `install.sh` installs `ffmpeg` and `whisper-cpp` via Homebrew, writes `~/.daybook.conf`, links `daybook` into `~/.local/bin`, and downloads the Whisper model (~1.5 GB).
 
