@@ -40,6 +40,12 @@ cat > "$LA/com.daybook.record.plist" <<EOF
   </array>
   <key>StandardErrorPath</key><string>$DBK_ROOT/logs/launchd-record.err</string>
   <key>RunAtLoad</key><false/>
+  <!-- Audio capture is latency-sensitive. Without this launchd runs the job in
+       a throttled background band, the process is scheduled too slowly to drain
+       CoreAudio's buffers, and roughly three quarters of the samples are
+       discarded with no error reported anywhere. -->
+  <key>ProcessType</key><string>Interactive</string>
+  <key>LowPriorityIO</key><false/>
 </dict></plist>
 EOF
 
