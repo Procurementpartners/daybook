@@ -93,6 +93,7 @@ These are machine transcripts of far-field audio. They are not verbatim minutes,
 |---|---|
 | Start/stop recording | `daybook start [secs]` / `daybook stop` |
 | Read the raw transcript | `daybook read [day]` |
+| Browse visually / by date | `daybook web` — builds and opens a local page with search across all days. Never publish transcripts to a hosted page; they are workplace audio and belong on the machine. |
 | One meeting | `daybook note <name>` |
 | Search across days | `grep -ri "<term>" ~/Daybook/transcripts/` |
 | Change hours, device, retention | Edit `~/.daybook.conf`, then `daybook schedule on` |

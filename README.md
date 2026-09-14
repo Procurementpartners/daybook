@@ -64,6 +64,8 @@ daybook purge           # compress audio, apply retention
 
 Notes land in `~/Daybook/notes/YYYY-MM-DD/` as Markdown — one file per meeting plus `00-index.md`.
 
+`daybook web` builds `~/Daybook/site/index.html`: a single self-contained page listing every day, with each meeting collapsible and a search box across all of them. It opens straight from disk — no server, no upload, no network requests. Your transcripts never leave the machine, which is the point.
+
 ## Installing the agent org-wide
 
 The repo doubles as a Claude Code plugin marketplace, so the agent can be distributed to the team without anyone copying files.

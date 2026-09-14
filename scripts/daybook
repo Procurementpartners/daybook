@@ -33,6 +33,7 @@ ${BOLD}daybook${OFF} — Daybook
   ${BOLD}daybook read${OFF} [day]         Print the day's full transcript
   ${BOLD}daybook note${OFF} <n|name>      Print one meeting's note
   ${BOLD}daybook open${OFF} [day]         Open the notes folder in Finder
+  ${BOLD}daybook web${OFF}               Browse all days in a local web page
 
   ${BOLD}daybook schedule on|off${OFF}    Enable/disable the ${DBK_START_HOUR}:00 daily job
   ${BOLD}daybook purge${OFF}              Compress audio, apply retention
@@ -164,6 +165,12 @@ cmd_note(){
   [ -n "$f" ] && cat "$f" || echo "no note matching '$N' on $DAY"
 }
 
+# Build and open the local browser for notes.
+cmd_web(){
+  DBK_ROOT="$DBK_ROOT" python3 "$DBK_LIB/build-site.py" || return 1
+  open "$DBK_ROOT/site/index.html"
+}
+
 cmd_open(){
   local DAY; DAY=$(day_arg "${1:-}")
   local D="$DBK_ROOT/notes/$DAY"
@@ -221,6 +228,7 @@ case "${1:-}" in
   read)         shift; cmd_read "${1:-}";;
   note)         shift; cmd_note "${1:-}" "${2:-}";;
   open)         shift; cmd_open "${1:-}";;
+  web)          cmd_web;;
   schedule)     shift; cmd_schedule "${1:-}";;
   purge)        "$DBK_LIB/purge.sh";;
   setup-model)  cmd_setup_model;;
