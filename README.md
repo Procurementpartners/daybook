@@ -49,7 +49,7 @@ git clone https://github.com/Procurementpartners/daybook ~/.daybook-src && ~/.da
 
 To update later, re-run `~/.daybook-src/bootstrap.sh` — it pulls and reinstalls in place.
 
-`install.sh` installs `ffmpeg` and `whisper-cpp` via Homebrew, writes `~/.daybook.conf`, links `daybook` into `~/.local/bin`, and downloads the Whisper model (~1.5 GB).
+`install.sh` installs `ffmpeg` and `whisper-cpp` via Homebrew, writes `~/.daybook.conf`, links `daybook` into `~/.local/bin`, links the Claude skill, adds narrow permission rules so unattended runs don't stall, and downloads the Whisper and VAD models (~1.5 GB). It is safe to re-run.
 
 ## Use
 
@@ -139,6 +139,12 @@ Three things this supports that a fixed 8–17 assumption doesn't:
 
 The one genuinely shared clock is the **calendar JSON**, whose times are UTC. `make-notes.py` converts to local on read, so this is handled — but it's the place a timezone error would show up, as notes landing on the wrong meeting. Check one known meeting after first setup.
 
+## Daily summary, delivered automatically
+
+A scheduled Claude task can run the whole pipeline after your recording window ends and send you the result — Slack, email, wherever. It transcribes, fetches your calendar, builds the notes, reads them, and writes the summary.
+
+See [docs/automation.md](docs/automation.md) for how to set it up and, more usefully, the failure you will actually hit: **a scheduled run that needs a permission does not fail, it stalls forever** with no error and no output. `install.sh` pre-authorises the Daybook commands to avoid that; connectors still need one watched run to approve.
+
 ## Calendar
 
 `daybook notes` reads `~/Daybook/calendar/YYYY-MM-DD.json`. Populating it needs access to your calendar, which a shell script doesn't have — see [docs/calendar.md](docs/calendar.md).
@@ -186,4 +192,5 @@ lib/transcribe.sh         silence gate + Whisper
 lib/wallclock.py          whisper offsets → clock time
 lib/make-notes.py         calendar slicing
 lib/purge.sh              compression + retention
+lib/build-site.py         the local browser for notes
 ```

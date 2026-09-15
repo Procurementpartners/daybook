@@ -61,7 +61,40 @@ mkdir -p "$SKILLDIR"
 ln -sfn "$HERE/plugins/daybook/skills/daybook" "$SKILLDIR/daybook"
 echo "✓ daybook skill linked into $SKILLDIR"
 
-# 6. Model
+# 6. Permission rules
+# Scheduled/unattended runs do not fail on a missing permission — they stall
+# forever waiting for a prompt nobody answers, producing no output and no error.
+# These narrow rules let the daybook commands through without prompting.
+python3 - "$HOME/.claude/settings.json" <<'PYEOF'
+import json, pathlib, sys, os
+
+p = pathlib.Path(sys.argv[1])
+p.parent.mkdir(parents=True, exist_ok=True)
+try:
+    cfg = json.loads(p.read_text())
+except Exception:
+    cfg = {}
+
+home = os.path.expanduser("~")
+wanted = [
+    "Bash(daybook:*)",
+    f"Read(//{home.lstrip('/')}/Daybook/**)",
+    f"Write(//{home.lstrip('/')}/Daybook/calendar/**)",
+]
+
+perms = cfg.setdefault("permissions", {})
+allow = perms.setdefault("allow", [])
+added = [r for r in wanted if r not in allow]
+allow.extend(added)
+
+if added:
+    p.write_text(json.dumps(cfg, indent=2) + "\n")
+    print(f"\u2713 added {len(added)} permission rule(s) to {p}")
+else:
+    print("\u2713 permission rules already present")
+PYEOF
+
+# 7. Model
 source "$HERE/lib/common.sh"
 if [ -f "$DBK_MODEL" ]; then echo "✓ whisper model present"
 else echo "→ downloading whisper model (~1.5 GB)…"; "$HERE/scripts/daybook" setup-model; fi
