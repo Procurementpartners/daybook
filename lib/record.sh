@@ -11,6 +11,20 @@ LOG="$DBK_ROOT/logs/record-$DAY.log"
 mkdir -p "$OUTDIR"
 exec >>"$LOG" 2>&1
 
+# Refuse to start if a recorder is already running. Without this, a manual
+# `daybook start` and the scheduled job can both run: two ffmpeg processes
+# capture the same room into the same folder, every line is transcribed twice,
+# and disk use doubles.
+PIDFILE="$DBK_ROOT/logs/record.pid"
+if [ -f "$PIDFILE" ]; then
+  _old=$(cat "$PIDFILE" 2>/dev/null)
+  if [ -n "$_old" ] && kill -0 "$_old" 2>/dev/null; then
+    dbk_log "already recording (pid $_old) — not starting a second recorder"
+    exit 0
+  fi
+  rm -f "$PIDFILE"   # stale
+fi
+
 if ! IDX=$(dbk_device_index); then
   dbk_log "FATAL: no input device matching '$DBK_DEVICE_NAME'. Run: daybook devices"
   exit 1
