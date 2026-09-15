@@ -65,6 +65,8 @@ cmd_doctor(){
 
   [ -f "$DBK_MODEL" ] && ok "model $(basename "$DBK_MODEL") ($(du -h "$DBK_MODEL" | cut -f1))" \
                      || no "model missing — run: daybook setup-model"
+  [ -f "$DBK_VAD_MODEL" ] && ok "VAD model present (prevents hallucinated repeats)" \
+                          || no "VAD model missing — run: daybook setup-model"
   [ -f "$DBK_CONF" ]  && ok "config $DBK_CONF" || warn "no config, using defaults"
 
   if IDX=$(dbk_device_index); then ok "input device [$IDX] ${DBK_DEVICE_NAME:-<system default>}"
@@ -203,9 +205,17 @@ cmd_schedule(){
 cmd_setup_model(){
   dbk_dirs
   local url="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin"
-  [ -f "$DBK_MODEL" ] && { ok "model already present"; return 0; }
-  echo "Downloading large-v3-turbo (~1.5 GB)…"
-  curl -L --progress-bar -o "$DBK_MODEL" "$url" && ok "model ready at $DBK_MODEL"
+  local vurl="https://huggingface.co/ggml-org/whisper-vad/resolve/main/ggml-silero-v5.1.2.bin"
+  if [ -f "$DBK_MODEL" ]; then ok "speech model already present"
+  else
+    echo "Downloading large-v3-turbo (~1.5 GB)…"
+    curl -L --progress-bar -o "$DBK_MODEL" "$url" && ok "speech model ready"
+  fi
+  if [ -f "$DBK_VAD_MODEL" ]; then ok "VAD model already present"
+  else
+    echo "Downloading Silero VAD (~1 MB)…"
+    curl -L --progress-bar -o "$DBK_VAD_MODEL" "$vurl" && ok "VAD model ready"
+  fi
 }
 
 cmd_uninstall(){

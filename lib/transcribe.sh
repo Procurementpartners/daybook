@@ -18,6 +18,18 @@ fi
 PROMPT_ARG=()
 [ -n "$DBK_PROMPT" ] && PROMPT_ARG=(--prompt "$DBK_PROMPT")
 
+# Anti-hallucination. Whisper invents repeated phrases when fed silence, and
+# conditions on its own output so a loop sustains itself. VAD removes the
+# silence; -mc 0 stops the decoder carrying invented text forward; -sns
+# suppresses non-speech tokens.
+QUALITY_ARG=(-mc 0 -sns)
+if [ -f "$DBK_VAD_MODEL" ]; then
+  QUALITY_ARG+=(--vad --vad-model "$DBK_VAD_MODEL")
+else
+  echo "! VAD model missing at $DBK_VAD_MODEL — expect hallucinated repeats on quiet audio" >&2
+  echo "  run: daybook setup-model" >&2
+fi
+
 for W in "$AUDIO"/seg-*.wav; do
   [ -e "$W" ] || continue
   BASE=$(basename "$W" .wav)
@@ -39,7 +51,7 @@ for W in "$AUDIO"/seg-*.wav; do
 
   echo "[speech] $BASE (${PEAK}dB)"
   whisper-cli -m "$DBK_MODEL" -f "$W" -oj -of "$OUT/$BASE" \
-              -l "$DBK_LANG" -t 8 "${PROMPT_ARG[@]}" >/dev/null 2>&1
+              -l "$DBK_LANG" -t 8 "${PROMPT_ARG[@]}" "${QUALITY_ARG[@]}" >/dev/null 2>&1
 
   if [ -f "$OUT/$BASE.json" ]; then
     python3 "$(dirname "${BASH_SOURCE[0]}")/wallclock.py" "$OUT/$BASE.json" > "$DONE"

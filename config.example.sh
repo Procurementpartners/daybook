@@ -26,6 +26,12 @@ DBK_SEGMENT_SECONDS=300
 DBK_MODEL="$DBK_ROOT/models/ggml-large-v3-turbo.bin"
 DBK_LANG="en"
 
+# Voice Activity Detection. Whisper hallucinates badly on silence — a quiet
+# five-minute segment can produce hundreds of invented lines ("Thank you.",
+# "We'll see you in the next video."). VAD finds the speech first and only
+# transcribes that. Leave this set unless you have a reason not to.
+DBK_VAD_MODEL="$DBK_ROOT/models/ggml-silero-v5.1.2.bin"
+
 # Segments quieter than this (dBFS peak) are treated as empty and skipped.
 DBK_SILENCE_FLOOR=-45
 
