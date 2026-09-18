@@ -77,6 +77,25 @@ Read the per-meeting notes in `~/Daybook/notes/<day>/` and give the user, per me
 
 Then a short list across the whole day of what needs the user's attention.
 
+### 5. Save the summaries so they show up in the viewer
+
+Write each meeting's summary to:
+
+```
+~/Daybook/summaries/<YYYY-MM-DD>/<exact filename of the note>.md
+```
+
+Same filename as the note in `~/Daybook/notes/<day>/` — that is how they are paired.
+`daybook web` renders the summary above that meeting's transcript.
+
+Keep them in Markdown: `##` headings, bullets, numbered lists, `**bold**`, `` `code` ``.
+A useful shape is *What this was* → *Decisions* → *Todos* → *Open*, but follow the
+meeting rather than the template. Don't write one for a meeting with almost no content;
+say it was quiet instead.
+
+Never write a summary into the note file itself — `daybook notes` rewrites those on
+every rebuild and it would be lost.
+
 ## Reading the transcripts honestly
 
 These are machine transcripts of far-field audio. They are not verbatim minutes, and treating them as such will mislead the user.

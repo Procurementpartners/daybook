@@ -16,9 +16,44 @@ OUT.mkdir(parents=True, exist_ok=True)
 line_re = re.compile(r'^`(\d{2}:\d{2}:\d{2})`\s+(.*)$')
 meta_re = re.compile(r'^- \*\*(\w+):\*\*\s*(.*)$')
 
+def md_to_html(md):
+    """Minimal markdown -> HTML for summaries: headings, bullets, numbers, bold, code."""
+    import html as _h
+    out, in_ul, in_ol = [], False, False
+    def close():
+        nonlocal in_ul, in_ol
+        if in_ul: out.append("</ul>"); in_ul = False
+        if in_ol: out.append("</ol>"); in_ol = False
+    for raw in md.splitlines():
+        ln = raw.rstrip()
+        if not ln.strip():
+            close(); continue
+        esc = _h.escape(ln)
+        esc = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', esc)
+        esc = re.sub(r'`(.+?)`', r'<code>\1</code>', esc)
+        m = re.match(r'^(#{1,4})\s+(.*)$', esc)
+        if m:
+            close(); lvl = min(len(m.group(1)) + 2, 6)
+            out.append(f"<h{lvl}>{m.group(2)}</h{lvl}>"); continue
+        m = re.match(r'^\s*(?:[-*\u2022])\s+(.*)$', esc)
+        if m:
+            if in_ol: out.append("</ol>"); in_ol = False
+            if not in_ul: out.append("<ul>"); in_ul = True
+            out.append(f"<li>{m.group(1)}</li>"); continue
+        m = re.match(r'^\s*\d+[.)]\s+(.*)$', esc)
+        if m:
+            if in_ul: out.append("</ul>"); in_ul = False
+            if not in_ol: out.append("<ol>"); in_ol = True
+            out.append(f"<li>{m.group(1)}</li>"); continue
+        close(); out.append(f"<p>{esc}</p>")
+    close()
+    return "\n".join(out)
+
+
 def read_day(day_dir):
     """Parse one day's notes into structured data."""
     meetings, unscheduled = [], []
+    sum_dir = ROOT / "summaries" / day_dir.name
     for f in sorted(day_dir.glob("*.md")):
         if f.name == "00-index.md":
             continue
@@ -38,7 +73,10 @@ def read_day(day_dir):
                 body.append({"t": m.group(1), "s": m.group(2)})
             elif ln.strip() and not ln.startswith(("#", "_", "<", "-")):
                 body.append({"t": "", "s": ln.strip()})
-        entry = {"title": title, "meta": meta, "lines": body, "source": source}
+        sf = sum_dir / f.name
+        summary = md_to_html(sf.read_text(errors="replace")) if sf.exists() else ""
+        entry = {"title": title, "meta": meta, "lines": body,
+                 "source": source, "summary": summary}
         (unscheduled if f.name == "unscheduled.md" else meetings).append(entry)
     return meetings + unscheduled
 
@@ -115,6 +153,19 @@ main{overflow-y:auto;padding:22px 30px}
 .src{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;
   border:1px solid var(--line);color:var(--dim);margin-top:8px}
 .src.teams{color:var(--teams);border-color:var(--teams)}
+.summary{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:16px 20px;margin-bottom:22px}
+.summary h3,.summary h4,.summary h5{margin:16px 0 6px;font-size:13px;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--accent)}
+.summary h3:first-child,.summary h4:first-child,.summary h5:first-child{margin-top:0}
+.summary p{margin:6px 0}
+.summary ul,.summary ol{margin:6px 0;padding-left:22px}
+.summary li{margin:3px 0}
+.summary code{font:12.5px var(--mono);background:var(--rail);padding:1px 5px;border-radius:4px}
+.divider{display:flex;align-items:center;gap:12px;color:var(--dim);font-size:11px;
+  letter-spacing:.08em;text-transform:uppercase;margin:0 0 10px}
+.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+.nosum{color:var(--dim);font-size:12.5px;font-style:italic;margin-bottom:20px}
 .ln{display:flex;gap:14px;padding:3px 0;align-items:baseline}
 .ln .t{font:11px/1.7 var(--mono);color:var(--dim);white-space:nowrap}
 mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
@@ -175,7 +226,7 @@ function render(){
   nav.innerHTML = list.length ? list.map(({e,i,hits}) => {
     const when = (e.meta.when||'').split('(')[0].trim();
     const tag  = e.source==='teams' ? '<span class="c teams">Teams transcript</span>'
-               : `<span class="c">${hits.length} line${hits.length===1?'':'s'}</span>`;
+               : `<span class="c">${hits.length} line${hits.length===1?'':'s'}${e.summary?' · summarised':''}</span>`;
     return `<button class="mtg${i===sel?' on':''}${hits.length?'':' empty'}" data-i="${i}">
       <span class="t">${when||'&nbsp;'}</span>
       <span class="n">${esc(e.title)}</span>${tag}</button>`;
@@ -195,12 +246,19 @@ function render(){
     ? '<span class="src teams">Microsoft Teams — speaker-attributed</span>'
     : '<span class="src">Local microphone — no speaker labels</span>';
 
+  const summary = e.summary
+    ? `<div class="summary">${e.summary}</div>`
+    : (e.lines.length ? '<div class="nosum">No summary yet for this meeting.</div>' : '');
+
+  const body = hits.length
+    ? `<div class="divider">Transcript · ${hits.length} line${hits.length===1?'':'s'}</div>` +
+      hits.map(l => `<div class="ln"><span class="t">${l.t}</span><span>${hi(l.s)}</span></div>`).join('')
+    : '<div class="none">No audio captured during this window.</div>';
+
   view.innerHTML = `<div class="mhead">
       <h2>${esc(e.title)}</h2>
       <div class="meta">${esc(e.meta.when||'')}</div>${org}${att}${src}
-    </div>` + (hits.length
-      ? hits.map(l => `<div class="ln"><span class="t">${l.t}</span><span>${hi(l.s)}</span></div>`).join('')
-      : '<div class="none">No audio captured during this window.</div>');
+    </div>` + summary + body;
   view.scrollTop = 0;
 }
 

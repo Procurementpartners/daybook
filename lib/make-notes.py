@@ -18,6 +18,12 @@ cfile = ROOT / "calendar" / f"{day}.json"
 odir = ROOT / "notes" / day
 odir.mkdir(parents=True, exist_ok=True)
 
+# Remove notes from a previous build. Meeting numbering shifts whenever the
+# calendar changes during the day, so stale files would otherwise accumulate
+# and show up as duplicate meetings.
+for old in odir.glob("*.md"):
+    old.unlink()
+
 # ---- load transcript lines, tagged with a real datetime -------------------
 line_re = re.compile(r'^\[(\d{2}):(\d{2}):(\d{2})\]\s*(.*)$')
 lines = []
