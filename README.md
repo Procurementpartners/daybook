@@ -129,6 +129,7 @@ Everything lives in `~/.daybook.conf`:
 | `DBK_WEEKDAYS` | `1 2 3 4 5` | 1 = Monday |
 | `DBK_SEGMENT_SECONDS` | 300 | Shorter = less lost to a crash |
 | `DBK_SILENCE_FLOOR` | -45 | Peak dBFS below which a chunk is skipped |
+| `DBK_MEETING_GRACE_MIN` | 10 | Minutes a meeting may over/under-run its calendar slot |
 | `DBK_KEEP_AUDIO_DAYS` | 3 | Days to keep a compressed Opus archive; 0 deletes audio as soon as it's transcribed |
 | `DBK_KEEP_TRANSCRIPT_DAYS` | 90 | |
 | `DBK_PROMPT` | — | Domain vocabulary to bias transcription |
@@ -170,6 +171,26 @@ Where a Teams transcript exists, it is used instead of the microphone transcript
 Reaching them through the Graph API needs a tenant setting that Microsoft now defaults to **off**. See [docs/teams.md](docs/teams.md) for the exact thing to ask an admin for.
 
 The recorder keeps running either way — Teams only covers transcribed Teams meetings, not in-person conversations, phone calls, or desk work.
+
+## Meetings don't run to the calendar
+
+Calendar times are when meetings were *scheduled*, not when they happened. They
+start late, run over, and self-scheduled blocks (lunch, focus time) sit on top of
+real meetings. Two rules handle that:
+
+**Grace.** Each meeting's window extends `DBK_MEETING_GRACE_MIN` either side, but
+never across a neighbouring meeting — so a call running ten minutes over keeps its
+own ending instead of opening the next meeting's note.
+
+**One owner per line.** A transcript line belongs to exactly one meeting: the
+shortest candidate whose window covers it. A 15-minute standup sitting inside a
+95-minute lunch block wins, because the standup is what the audio actually is. When
+two meetings are the same length and overlap, the one already in progress keeps the
+overlap — you generally stay in the call you're on rather than switching on the hour.
+
+This is heuristic, not truth. Two genuinely simultaneous meetings of the same
+length cannot be told apart from timestamps, and the transcript will land in one of
+them.
 
 ## Known limits
 

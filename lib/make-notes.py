@@ -7,7 +7,7 @@ Reads : ~/Daybook/transcripts/<day>/*.txt   lines like "[HH:MM:SS] text"
 Writes: ~/Daybook/notes/<day>/NN-<slug>.md  plus 00-index.md and unscheduled.md
 """
 import json, re, sys, os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 ROOT = Path(os.environ.get("DBK_ROOT", str(Path.home() / "Daybook")))
@@ -56,10 +56,57 @@ def slug(s):
 claimed = set()
 index = [f"# Daily notes — {day}\n"]
 
-for i, ev in enumerate(events, 1):
-    hits = [(t, x) for (t, x) in lines if ev["start_local"] <= t <= ev["end_local"]]
-    for t, x in hits:
+# --- assign each transcript line to exactly one meeting -----------------
+#
+# Calendar times are not when meetings actually happen. They start late, run
+# over, and self-scheduled blocks (lunch, focus time) sit on top of real
+# meetings. Two rules handle that:
+#
+#   Grace   — a meeting's effective window extends a few minutes either side,
+#             but never past a neighbouring meeting, so an overrun stays with
+#             the meeting that overran rather than opening the next one.
+#   Winner  — a line belongs to ONE meeting: the shortest candidate whose
+#             window covers it. A 15-minute standup inside a 95-minute lunch
+#             block wins, because the specific event describes the audio and
+#             the block is just "busy".
+GRACE = timedelta(minutes=int(os.environ.get("DBK_MEETING_GRACE_MIN", "10")))
+
+for idx, ev in enumerate(events):
+    lead = tail = GRACE
+    for other in events:
+        if other is ev:
+            continue
+        # don't reach back over a meeting that ended before this one started
+        if other["end_local"] <= ev["start_local"]:
+            lead = min(lead, ev["start_local"] - other["end_local"])
+        # don't run on past one that starts after this one ends
+        if other["start_local"] >= ev["end_local"]:
+            tail = min(tail, other["start_local"] - ev["end_local"])
+    ev["win_start"] = ev["start_local"] - max(lead, timedelta(0))
+    ev["win_end"] = ev["end_local"] + max(tail, timedelta(0))
+    ev["_dur"] = ev["end_local"] - ev["start_local"]
+
+def owner(t):
+    """The single event a line at time t belongs to, or None."""
+    cands = [e for e in events if e["win_start"] <= t <= e["win_end"]]
+    if not cands:
+        return None
+    # Shortest meeting wins — a 15-minute standup inside a 95-minute lunch
+    # block is what the audio actually is. When durations tie, the meeting
+    # already in progress keeps the overlap: you generally stay in the call
+    # you are on until it ends, rather than switching on the stroke of the
+    # hour.
+    return min(cands, key=lambda e: (e["_dur"], e["start_local"]))
+
+assigned = {}
+for t, x in lines:
+    ev = owner(t)
+    if ev is not None:
+        assigned.setdefault(id(ev), []).append((t, x))
         claimed.add((t, x))
+
+for i, ev in enumerate(events, 1):
+    hits = assigned.get(id(ev), [])
 
     dur = int((ev["end_local"] - ev["start_local"]).total_seconds() // 60)
     name = f"{i:02d}-{slug(ev['subject'])}.md"

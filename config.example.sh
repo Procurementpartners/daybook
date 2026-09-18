@@ -32,6 +32,10 @@ DBK_LANG="en"
 # transcribes that. Leave this set unless you have a reason not to.
 DBK_VAD_MODEL="$DBK_ROOT/models/ggml-silero-v5.1.2.bin"
 
+# How far a meeting may run past its scheduled start/end before its audio stops
+# counting as that meeting. Never extends across a neighbouring meeting.
+DBK_MEETING_GRACE_MIN=10
+
 # Segments quieter than this (dBFS peak) are treated as empty and skipped.
 DBK_SILENCE_FLOOR=-45
 
