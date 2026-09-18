@@ -2,17 +2,34 @@
 
 Daybook records and transcribes on its own. Turning that into a summary that arrives without you asking needs one more piece: a scheduled Claude task, because the calendar fetch and the summarising both need a model and a connector, which a shell script has neither of.
 
-## What the task does
+## Two tasks, not one
 
-Weekdays at your chosen time, it:
+**Calendar fetch, 18:00.** Pulls the day's final calendar and rebuilds the notes.
+Deliberately at the end of the day: meetings get added, moved and cancelled as the
+day goes on, so a calendar pulled in the morning is wrong by the evening. It
+overwrites any earlier file rather than skipping.
 
-1. `daybook transcribe` — catches anything the 10-minute job hasn't picked up
-2. Fetches the day's calendar through the Outlook/Google connector and writes `~/Daybook/calendar/<date>.json`
-3. `daybook notes` — slices the transcript by meeting
-4. Reads the per-meeting notes and writes a summary
-5. Sends it — Slack DM, email, wherever you want it
+**Summary, 18:30.** Transcribes anything outstanding, writes a summary for every
+meeting that has content, rebuilds the viewer, and sends the day-level roll-up.
 
-Schedule it for **after** your recording window ends. The transcriber runs every 10 minutes all day, so by then the backlog is usually zero and step 1 is a formality.
+Splitting them matters: the summary task depends on the notes being correct, and
+the notes depend on a calendar that reflects what actually happened.
+
+## Where summaries go
+
+The summary task writes one file per meeting to:
+
+```
+~/Daybook/summaries/<date>/<same filename as the note>.md
+```
+
+That pairing is how `daybook web` renders a summary above its meeting's transcript.
+They live outside `notes/` because `daybook notes` rewrites those files on every
+build — anything written into a note would be destroyed on the next run.
+
+`daybook web` itself does **not** summarise. It is a static generator: it renders
+summaries that already exist. Writing them needs a model, so it happens in the
+18:30 task or whenever you ask Claude.
 
 ## Setting it up
 
