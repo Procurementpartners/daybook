@@ -13,9 +13,22 @@ from pathlib import Path
 ROOT = Path(os.environ.get("DBK_ROOT", str(Path.home() / "Daybook")))
 day = sys.argv[1] if len(sys.argv) > 1 else datetime.now().strftime("%Y-%m-%d")
 
+# A day must look like a day. Without this, `daybook notes --help` cheerfully
+# creates a directory called "--help" and a calendar file called "--help.json".
+if not re.match(r'^\d{4}-\d{2}-\d{2}$', day):
+    print(f"not a date: {day!r} (expected YYYY-MM-DD)", file=sys.stderr)
+    sys.exit(2)
+
 tdir = ROOT / "transcripts" / day
 cfile = ROOT / "calendar" / f"{day}.json"
 odir = ROOT / "notes" / day
+
+# Nothing recorded and nothing scheduled — don't leave an empty day behind for
+# someone to clean up later.
+if not tdir.exists() and not cfile.exists():
+    print(f"nothing for {day}: no transcripts, no calendar")
+    sys.exit(0)
+
 odir.mkdir(parents=True, exist_ok=True)
 
 # Remove notes from a previous build. Meeting numbering shifts whenever the

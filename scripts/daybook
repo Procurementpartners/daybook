@@ -45,7 +45,19 @@ Data:   ${DBK_ROOT}
 EOF
 }
 
-day_arg(){ echo "${1:-$(date +%Y-%m-%d)}"; }
+# A day argument must be a date. Without this, `daybook notes --help` was
+# passed straight through and created a directory literally called "--help".
+day_arg(){
+  local d="${1:-$(date +%Y-%m-%d)}"
+  case "$d" in
+    -h|--help) usage >&2; exit 0;;
+  esac
+  if ! [[ "$d" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+    no "not a date: '$d' (expected YYYY-MM-DD)" >&2
+    exit 2
+  fi
+  echo "$d"
+}
 
 cmd_devices(){
   echo "${BOLD}Audio input devices${OFF}"
@@ -231,7 +243,7 @@ case "${1:-}" in
   status)       cmd_status;;
   devices)      cmd_devices;;
   doctor)       cmd_doctor;;
-  transcribe)   shift; "$DBK_LIB/transcribe.sh" "${1:-}";;
+  transcribe)   shift; "$DBK_LIB/transcribe.sh" "$(day_arg "${1:-}")";;
   notes)        shift; cmd_notes "${1:-}";;
   today)        cmd_today;;
   show)         shift; cmd_show "${1:-}";;
