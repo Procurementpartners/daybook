@@ -76,10 +76,12 @@ except Exception:
     cfg = {}
 
 home = os.path.expanduser("~")
+root = os.environ.get("DBK_ROOT", os.path.join(home, "Daybook"))
 wanted = [
     "Bash(daybook:*)",
-    f"Read(//{home.lstrip('/')}/Daybook/**)",
-    f"Write(//{home.lstrip('/')}/Daybook/calendar/**)",
+    f"Read(//{root.lstrip('/')}/**)",
+    f"Write(//{root.lstrip('/')}/calendar/**)",
+    f"Write(//{root.lstrip('/')}/summaries/**)",
 ]
 
 perms = cfg.setdefault("permissions", {})
@@ -87,9 +89,22 @@ allow = perms.setdefault("allow", [])
 added = [r for r in wanted if r not in allow]
 allow.extend(added)
 
-if added:
+# The data directory sits outside any project, so a scheduled run refuses to
+# write there with "Path is outside allowed working directories" — a workspace
+# boundary, checked BEFORE the allow rules above, which is why clicking
+# "Always allow" never makes it stop asking.
+dirs = perms.setdefault("additionalDirectories", [])
+dir_entry = root.rstrip("/") + "/"
+dir_added = dir_entry not in dirs
+if dir_added:
+    dirs.append(dir_entry)
+
+if added or dir_added:
     p.write_text(json.dumps(cfg, indent=2) + "\n")
-    print(f"\u2713 added {len(added)} permission rule(s) to {p}")
+    bits = []
+    if added: bits.append(f"{len(added)} permission rule(s)")
+    if dir_added: bits.append("the data directory")
+    print("\u2713 added " + " and ".join(bits) + f" to {p}")
 else:
     print("\u2713 permission rules already present")
 PYEOF

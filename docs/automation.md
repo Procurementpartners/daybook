@@ -45,7 +45,31 @@ Each run starts with no memory of the conversation that created it, so the task 
 - **A meeting with few lines was genuinely quiet.** Report that honestly rather than padding it.
 - **Verify one known meeting time** before trusting the calendar conversion. A timezone error silently files notes under the wrong meeting.
 
-## The failure you will actually hit
+## The failure that looks like a permissions bug but isn't
+
+If a scheduled run stops with:
+
+```
+Path is outside allowed working directories
+```
+
+that is **not** a permission rule. `~/Daybook` sits outside any project folder, and
+the workspace boundary is checked *before* the allow rules — so clicking **"Always
+allow"** adds a rule that is never reached, and the run prompts again on the next
+fire. It looks exactly like the permission system ignoring you.
+
+The fix is `permissions.additionalDirectories` in `~/.claude/settings.json`:
+
+```json
+"permissions": {
+  "additionalDirectories": ["/Users/<you>/Daybook/"],
+  "allow": ["Bash(daybook:*)", "..."]
+}
+```
+
+`install.sh` sets this. If you moved `DBK_ROOT`, the entry must move with it.
+
+## The other failure you will hit
 
 **A scheduled run that needs a permission does not fail. It stalls forever.**
 
