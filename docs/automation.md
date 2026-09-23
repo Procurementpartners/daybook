@@ -45,6 +45,39 @@ Each run starts with no memory of the conversation that created it, so the task 
 - **A meeting with few lines was genuinely quiet.** Report that honestly rather than padding it.
 - **Verify one known meeting time** before trusting the calendar conversion. A timezone error silently files notes under the wrong meeting.
 
+## Give the task one command, not a shell
+
+The failure that outlasted every permission fix: **each run is a fresh Claude that
+composes its own shell commands.** No allowlist can cover commands that do not exist
+yet. A run would invent `cd ~/Daybook && rm -rf notes/--help && daybook notes ...`,
+and a compound command containing `rm -rf` is only ever offered as **"Allow once"** —
+never "Always allow". So it stalled, indefinitely, on a command nobody could have
+pre-approved.
+
+The fix is to leave nothing to improvise:
+
+```
+daybook eod [day]
+```
+
+One command that transcribes, rebuilds the notes, rebuilds the viewer, and prints a
+manifest of what still needs a summary:
+
+```
+DAY 2026-09-22
+SUMMARY_DIR /Users/gaurav/Daybook/summaries/2026-09-22
+TODO    409    /Users/.../04-engineering-weekly-l10.md    Engineering Weekly L10
+DONE    307    /Users/.../02-data-analytics.md            Data & Analytics
+EMPTY   0      /Users/.../11-personal-work.md             Personal work
+```
+
+The task then needs exactly four things: `daybook eod`, Read, Write, and the two
+connectors. Its prompt says so explicitly, and tells it to stop and report rather
+than repair anything.
+
+**When writing a scheduled task, count the commands it could possibly need.** If the
+answer is "depends what it finds", it will stall sooner or later.
+
 ## The failure that looks like a permissions bug but isn't
 
 If a scheduled run stops with:

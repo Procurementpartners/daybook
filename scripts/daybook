@@ -29,6 +29,7 @@ ${BOLD}daybook${OFF} — Daybook
   ${BOLD}daybook transcribe${OFF} [day]   Transcribe segments (default: today)
   ${BOLD}daybook notes${OFF} [day]        Build calendar-linked notes
   ${BOLD}daybook today${OFF}              Transcribe + notes + show index
+  ${BOLD}daybook eod${OFF} [day]           Transcribe + notes + site, list notes needing a summary
   ${BOLD}daybook show${OFF} [day]         Print the day's index
   ${BOLD}daybook read${OFF} [day]         Print the day's full transcript
   ${BOLD}daybook note${OFF} <n|name>      Print one meeting's note
@@ -192,6 +193,37 @@ cmd_open(){
   open "$D"
 }
 
+# One command for the whole mechanical end-of-day pass, so an automated run
+# never has to compose shell of its own — anything it invents falls outside the
+# allowlist and stalls waiting for an approval nobody is there to give.
+cmd_eod(){
+  local DAY; DAY=$(day_arg "${1:-}")
+  "$DBK_LIB/transcribe.sh" "$DAY" >/dev/null 2>&1
+  DBK_ROOT="$DBK_ROOT" python3 "$DBK_LIB/make-notes.py" "$DAY" >/dev/null 2>&1
+  DBK_ROOT="$DBK_ROOT" python3 "$DBK_LIB/build-site.py" >/dev/null 2>&1
+
+  local ND="$DBK_ROOT/notes/$DAY" SD="$DBK_ROOT/summaries/$DAY"
+  mkdir -p "$SD"
+  if [ ! -d "$ND" ]; then
+    echo "NOTHING $DAY no notes"
+    return 0
+  fi
+  echo "DAY $DAY"
+  echo "SUMMARY_DIR $SD"
+  # One line per note: STATUS<TAB>lines<TAB>path<TAB>title
+  local f n title status
+  for f in "$ND"/*.md; do
+    [ -e "$f" ] || continue
+    case "$(basename "$f")" in 00-index.md) continue;; esac
+    n=$(grep -c '^`' "$f")
+    title=$(head -1 "$f" | sed 's/^# //')
+    if [ "$n" -eq 0 ]; then status=EMPTY
+    elif [ -e "$SD/$(basename "$f")" ]; then status=DONE
+    else status=TODO; fi
+    printf '%s\t%s\t%s\t%s\n' "$status" "$n" "$f" "$title"
+  done
+}
+
 cmd_today(){
   "$DBK_LIB/transcribe.sh"
   cmd_notes
@@ -246,6 +278,7 @@ case "${1:-}" in
   transcribe)   shift; "$DBK_LIB/transcribe.sh" "$(day_arg "${1:-}")";;
   notes)        shift; cmd_notes "${1:-}";;
   today)        cmd_today;;
+  eod)          shift; cmd_eod "${1:-}";;
   show)         shift; cmd_show "${1:-}";;
   read)         shift; cmd_read "${1:-}";;
   note)         shift; cmd_note "${1:-}" "${2:-}";;
