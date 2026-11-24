@@ -19,17 +19,39 @@ PIDFILE="$DBK_ROOT/logs/record.pid"
 if [ -f "$PIDFILE" ]; then
   _old=$(cat "$PIDFILE" 2>/dev/null)
   if [ -n "$_old" ] && kill -0 "$_old" 2>/dev/null; then
-    dbk_log "already recording (pid $_old) — not starting a second recorder"
-    exit 0
+    # A live PID is not proof of a healthy recorder. An ffmpeg that ignores its
+    # -t and hangs will hold this lock forever, and every later run exits here
+    # "cleanly" — which once silently disabled recording for six days. A
+    # recording never legitimately outlives a day, so anything older than that
+    # is wedged: say so loudly, clear it, and carry on.
+    _age=$(( $(date +%s) - $(stat -f %m "$PIDFILE" 2>/dev/null || echo 0) ))
+    if [ "$_age" -gt 86400 ]; then
+      dbk_log "STALE LOCK: pid $_old has held the recorder for $(( _age / 3600 ))h — killing it"
+      kill "$_old" 2>/dev/null
+      pkill -P "$_old" -f avfoundation 2>/dev/null
+      sleep 2
+      kill -9 "$_old" 2>/dev/null
+      rm -f "$PIDFILE"
+    else
+      dbk_log "already recording (pid $_old) — not starting a second recorder"
+      exit 0
+    fi
+  else
+    rm -f "$PIDFILE"   # process gone
   fi
-  rm -f "$PIDFILE"   # stale
 fi
 
-if ! IDX=$(dbk_device_index); then
-  dbk_log "FATAL: no input device matching '$DBK_DEVICE_NAME'. Run: daybook devices"
+if ! PICK=$(dbk_device_pick); then
+  dbk_log "FATAL: no input device matches '$DBK_DEVICE_NAME'. Run: daybook devices"
   exit 1
 fi
-dbk_log "input device [$IDX] ${DBK_DEVICE_NAME:-<system default>}"
+IDX="${PICK%%	*}"; MATCHED="${PICK#*	}"
+# Log what was actually opened, never the configured list — a log saying
+# "TONOR|MacBook Pro Microphone" hides which microphone is really recording.
+dbk_log "input device [$IDX] $MATCHED"
+if [ -n "$DBK_DEVICE_NAME" ] && [ "$MATCHED" != "${DBK_DEVICE_NAME%%|*}" ]; then
+  dbk_log "NOTE: preferred device '${DBK_DEVICE_NAME%%|*}' not connected — recording on the fallback"
+fi
 
 if [ "${1:-}" != "" ]; then
   DUR="$1"; dbk_log "manual run: ${DUR}s"

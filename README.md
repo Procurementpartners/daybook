@@ -123,7 +123,7 @@ Everything lives in `~/.daybook.conf`:
 
 | Setting | Default | Notes |
 |---|---|---|
-| `DBK_DEVICE_NAME` | *(system default)* | Matched by name, resolved at each start, so USB reordering can't break it |
+| `DBK_DEVICE_NAME` | *(system default)* | `"|"`-separated preference list, e.g. `"TONOR\|MacBook Pro Microphone"`. Resolved by name at each start; first one present wins |
 | `DBK_START_HOUR` / `DBK_START_MINUTE` | 8 / 0 | |
 | `DBK_END_HOUR` / `DBK_END_MINUTE` | 17 / 0 | An end at or before the start means an overnight window |
 | `DBK_WEEKDAYS` | `1 2 3 4 5` | 1 = Monday |

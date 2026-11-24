@@ -39,15 +39,39 @@ dbk_dirs(){ mkdir -p "$DBK_ROOT"/{audio,transcripts,notes,calendar,logs,models,a
 dbk_log(){ echo "$(date '+%Y-%m-%d %H:%M:%S') $*"; }
 
 # Resolve the avfoundation audio device index by name, at call time.
-dbk_device_index(){
-  local list idx
-  list=$(ffmpeg -f avfoundation -list_devices true -i "" 2>&1 | awk '/audio devices/,0')
-  if [ -z "$DBK_DEVICE_NAME" ]; then echo 0; return 0; fi
-  idx=$(echo "$list" | grep -i "$DBK_DEVICE_NAME" | sed -E 's/.*\[([0-9]+)\].*/\1/' | head -1)
-  [ -n "$idx" ] && echo "$idx" || return 1
+#
+# DBK_DEVICE_NAME may be a "|"-separated preference list, e.g.
+#   "TONOR|MacBook Pro Microphone"
+# Each name is tried in order and the first one present wins, so unplugging a
+# USB mic falls back to the built-in rather than failing — or worse, matching
+# whatever device happens to occupy that index now. Indexes shift when devices
+# are plugged or removed, so they are never trusted across runs.
+# Echoes "<index>\t<matched name>". Use dbk_device_index for just the index.
+dbk_device_pick(){
+  local list idx name
+  list=$(ffmpeg -f avfoundation -list_devices true -i "" 2>&1 \
+         | awk '/audio devices/,0' | grep -E '^\[AVFoundation[^]]*\] \[[0-9]+\]')
+  if [ -z "$DBK_DEVICE_NAME" ]; then printf '0\t%s\n' "<system default>"; return 0; fi
+  local IFS='|'
+  for name in $DBK_DEVICE_NAME; do
+    [ -z "$name" ] && continue
+    idx=$(echo "$list" | grep -iF "$name" | sed -E 's/.*\[([0-9]+)\] .*/\1/' | head -1)
+    if [ -n "$idx" ]; then
+      printf '%s\t%s\n' "$idx" "$name"
+      return 0
+    fi
+  done
+  return 1
 }
 
 dbk_peak_db(){  # $1=wav -> peak dBFS
   ffmpeg -hide_banner -i "$1" -af volumedetect -f null - 2>&1 \
     | awk -F': ' '/max_volume/{gsub(/ dB/,"",$2); print $2}'
+}
+
+# Just the index — a subshell cannot export a variable back to its caller, so
+# callers that also want the name should use dbk_device_pick and split it.
+dbk_device_index(){
+  local pick; pick=$(dbk_device_pick) || return 1
+  printf '%s\n' "${pick%%	*}"
 }

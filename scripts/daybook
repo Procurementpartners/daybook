@@ -82,8 +82,17 @@ cmd_doctor(){
                           || no "VAD model missing — run: daybook setup-model"
   [ -f "$DBK_CONF" ]  && ok "config $DBK_CONF" || warn "no config, using defaults"
 
-  if IDX=$(dbk_device_index); then ok "input device [$IDX] ${DBK_DEVICE_NAME:-<system default>}"
-  else no "input device '${DBK_DEVICE_NAME}' not found — run: daybook devices"; fi
+  if PICK=$(dbk_device_pick); then
+    IDX="${PICK%%	*}"; MATCHED="${PICK#*	}"
+    ok "input device [$IDX] $MATCHED"
+    # Say so when the preferred mic is absent — silently recording the wrong
+    # microphone is worse than not recording at all.
+    if [ -n "$DBK_DEVICE_NAME" ] && [ "$MATCHED" != "${DBK_DEVICE_NAME%%|*}" ]; then
+      warn "preferred device '${DBK_DEVICE_NAME%%|*}' is not connected — using the fallback"
+    fi
+  else
+    no "no input device matches '${DBK_DEVICE_NAME}' — run: daybook devices"
+  fi
 
   # Mic permission: a 1s probe that is silent at exactly -91dB means TCC denied.
   local t; t=$(mktemp).wav
@@ -127,7 +136,15 @@ cmd_stop(){
 
 cmd_status(){
   local DAY; DAY=$(date +%Y-%m-%d)
-  if pgrep -qf "avfoundation"; then ok "recording now"; else echo "  not recording"; fi
+  if pgrep -qf "avfoundation"; then
+    local pf="$DBK_ROOT/logs/record.pid" age=0
+    [ -f "$pf" ] && age=$(( ( $(date +%s) - $(stat -f %m "$pf" 2>/dev/null || echo 0) ) / 3600 ))
+    if [ "$age" -gt 24 ]; then
+      no "recorder WEDGED — running ${age}h, far longer than a day. Run: daybook stop"
+    else
+      ok "recording now"
+    fi
+  else echo "  not recording"; fi
   local segs txts
   segs=$(ls "$DBK_ROOT/audio/$DAY"/seg-*.wav 2>/dev/null | wc -l | tr -d ' ')
   txts=$(ls "$DBK_ROOT/transcripts/$DAY"/*.txt 2>/dev/null | wc -l | tr -d ' ')
